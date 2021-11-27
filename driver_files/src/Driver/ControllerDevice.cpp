@@ -5,6 +5,7 @@
 
 #include "input.h"
 
+extern double wantedHeightOffset;
 const double pi = std::acos(-1);
 
 inline vr::HmdQuaternion_t HmdQuaternion_Init( double w, double x, double y, double z )
@@ -119,7 +120,7 @@ void ExampleDriver::ControllerDevice::Update()
 
     //send the new position and rotation from the pipe to the tracker object
     pose.vecPosition[0] = wantedPose[0];
-    pose.vecPosition[1] = wantedPose[1];
+    pose.vecPosition[1] = wantedPose[1] + wantedHeightOffset;
     pose.vecPosition[2] = wantedPose[2];
 
     pose.qRotation.w = wantedPose[3];
@@ -253,6 +254,15 @@ void ExampleDriver::ControllerDevice::RunFrame()
             GetDriver()->GetInput()->UpdateScalarComponent(trigger_value_component_, 0.0, 0);
         }
 
+        if (getJoyButton(BTN_DPAD_UP)) { // Height up
+            wantedHeightOffset += 0.02;
+        }
+        if (getJoyButton(BTN_DPAD_DOWN)) { // Height down
+            wantedHeightOffset -= 0.02;
+        }
+        if (getJoyButton(BTN_DPAD_RIGHT)) { // Height reset
+            wantedHeightOffset = 0.0;
+        }
     }
     else if (this->handedness_ == Handedness::RIGHT) {
         GetDriver()->GetInput()->UpdateBooleanComponent(application_button_click_component_, getJoyButton(BTN_MODE), 0); //Application Menu

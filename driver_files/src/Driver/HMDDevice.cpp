@@ -8,6 +8,7 @@
 
 #include <openvr_driver.h>
 
+double wantedHeightOffset = 0;
 using namespace vr;
 
 const double pi = std::acos(-1);
@@ -74,7 +75,7 @@ void ExampleDriver::HMDDevice::Update()
     }
     //send the new position and rotation from the pipe to the tracker object
     pose.vecPosition[0] = wantedPose[0];
-    pose.vecPosition[1] = wantedPose[1];
+    pose.vecPosition[1] = wantedPose[1] + wantedHeightOffset;
     pose.vecPosition[2] = wantedPose[2];
 
     pose.qRotation.w = wantedPose[3];
