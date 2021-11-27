@@ -110,7 +110,23 @@ void ExampleDriver::VRDriver::PipeThread()
                         role = "TrackerRole_Waist";        //should be "vive_tracker_left_foot" or "vive_tracker_left_foot" or "vive_tracker_waist"
                     }
 
-                    auto addtracker = std::make_shared<TrackerDevice>(name, role);
+                    std::shared_ptr<IVRDevice> addtracker;
+                    if (this->trackers_.size() == 0)
+                    {
+                        addtracker = std::make_shared<HMDDevice>("AprilHMD0");
+                    }
+                    else if (this->trackers_.size() == 1)
+                    {
+                        addtracker = std::make_shared<ControllerDevice>("AprilControllerLeft", ControllerDevice::Handedness::LEFT);
+                    }
+                    else if (this->trackers_.size() == 2)
+                    {
+                        addtracker = std::make_shared<ControllerDevice>("AprilControllerRight", ControllerDevice::Handedness::RIGHT);
+                    }
+                    else
+                    {
+                        addtracker = std::make_shared<TrackerDevice>(name, role);;
+                    }
                     this->AddDevice(addtracker);
                     this->trackers_.push_back(addtracker);
                     addtracker->reinit(tracker_max_saved, tracker_max_time, tracker_smoothing);
