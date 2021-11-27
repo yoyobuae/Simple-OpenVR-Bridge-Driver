@@ -141,6 +141,23 @@ void ExampleDriver::ControllerDevice::Update()
     //pose.vecVelocity[1] = (pose.vecPosition[1] - previous_position[1]) / pose_time_delta_seconds;
     //pose.vecVelocity[2] = (pose.vecPosition[2] - previous_position[2]) / pose_time_delta_seconds;
 
+    // Recalibrate controller orientation on button press
+    if (this->handedness_ == Handedness::LEFT) {
+        if (getJoyButton(BTN_TRIGGER_HAPPY2)) {
+            pose.qDriverFromHeadRotation = HmdQuaternion_Init(-pose.qRotation.w,
+                                                              pose.qRotation.x,
+                                                              pose.qRotation.y,
+                                                              pose.qRotation.z);
+        }
+    }
+    else if (this->handedness_ == Handedness::RIGHT) {
+        if (getJoyButton(BTN_TRIGGER_HAPPY3)) {
+            pose.qDriverFromHeadRotation = HmdQuaternion_Init(-pose.qRotation.w,
+                                                              pose.qRotation.x,
+                                                              pose.qRotation.y,
+                                                              pose.qRotation.z);
+        }
+    }
 
     // Post pose
     GetDriver()->GetDriverHost()->TrackedDevicePoseUpdated(this->device_index_, pose, sizeof(vr::DriverPose_t));
