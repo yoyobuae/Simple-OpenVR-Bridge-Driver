@@ -64,6 +64,10 @@ namespace ExampleDriver {
         virtual void DebugRequest(const char* pchRequest, char* pchResponseBuffer, uint32_t unResponseBufferSize) = 0;
         virtual vr::DriverPose_t GetPose() = 0;
 
+        virtual void save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time) = 0;
+        virtual int get_next_pose(double req_time, double pred[]) = 0;
+        virtual void reinit(int msaved, double mtime, double msmooth) = 0;
+
         ~IVRDevice() = default;
     };
 };

@@ -38,6 +38,10 @@ namespace ExampleDriver {
             virtual void GetEyeOutputViewport(vr::EVREye eEye, uint32_t* pnX, uint32_t* pnY, uint32_t* pnWidth, uint32_t* pnHeight) override;
             virtual void GetProjectionRaw(vr::EVREye eEye, float* pfLeft, float* pfRight, float* pfTop, float* pfBottom) override;
             virtual vr::DistortionCoordinates_t ComputeDistortion(vr::EVREye eEye, float fU, float fV) override;
+
+            virtual void save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time) override;
+            virtual int get_next_pose(double req_time, double pred[]) override;
+            virtual void reinit(int msaved, double mtime, double msmooth) override;
     private:
         vr::TrackedDeviceIndex_t device_index_ = vr::k_unTrackedDeviceIndexInvalid;
         std::string serial_;

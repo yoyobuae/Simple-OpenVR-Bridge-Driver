@@ -143,3 +143,16 @@ vr::DriverPose_t ExampleDriver::TrackingReferenceDevice::GetPose()
 {
     return last_pose_;
 }
+
+void ExampleDriver::TrackingReferenceDevice::save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time)
+{
+}
+
+int ExampleDriver::TrackingReferenceDevice::get_next_pose(double req_time, double pred[])
+{
+        return -1;
+}
+
+void ExampleDriver::TrackingReferenceDevice::reinit(int msaved, double mtime, double msmooth)
+{
+}

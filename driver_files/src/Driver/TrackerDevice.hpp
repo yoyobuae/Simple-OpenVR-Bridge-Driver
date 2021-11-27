@@ -25,8 +25,8 @@ namespace ExampleDriver {
             virtual void Update() override;
             virtual void UpdatePos(double a, double b, double c, double time, double smoothing) override;
             virtual void UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing) override;
-            virtual void save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time);
-            virtual int get_next_pose(double req_time, double pred[]);
+            virtual void save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time) override;
+            virtual int get_next_pose(double req_time, double pred[]) override;
             virtual vr::TrackedDeviceIndex_t GetDeviceIndex() override;
             virtual DeviceType GetDeviceType() override;
             virtual void Log(std::string message);
@@ -38,7 +38,7 @@ namespace ExampleDriver {
             virtual void* GetComponent(const char* pchComponentNameAndVersion) override;
             virtual void DebugRequest(const char* pchRequest, char* pchResponseBuffer, uint32_t unResponseBufferSize) override;
             virtual vr::DriverPose_t GetPose() override;
-            virtual void reinit(int msaved, double mtime, double msmooth);
+            virtual void reinit(int msaved, double mtime, double msmooth) override;
 
     private:
         vr::TrackedDeviceIndex_t device_index_ = vr::k_unTrackedDeviceIndexInvalid;

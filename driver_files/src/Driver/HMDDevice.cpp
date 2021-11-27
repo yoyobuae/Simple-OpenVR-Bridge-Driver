@@ -352,3 +352,15 @@ vr::DistortionCoordinates_t ExampleDriver::HMDDevice::ComputeDistortion(vr::EVRE
     coordinates.rfRed[1] = fV;
     return coordinates;
 }
+void ExampleDriver::HMDDevice::save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time)
+{
+}
+
+int ExampleDriver::HMDDevice::get_next_pose(double req_time, double pred[])
+{
+    return -1;
+}
+
+void ExampleDriver::HMDDevice::reinit(int msaved, double mtime, double msmooth)
+{
+}

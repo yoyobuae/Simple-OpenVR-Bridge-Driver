@@ -633,3 +633,16 @@ vr::DriverPose_t ExampleDriver::ControllerDevice::GetPose()
 {
     return last_pose_;
 }
+
+void ExampleDriver::ControllerDevice::save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time)
+{
+}
+
+int ExampleDriver::ControllerDevice::get_next_pose(double req_time, double pred[])
+{
+    return -1;
+}
+
+void ExampleDriver::ControllerDevice::reinit(int msaved, double mtime, double msmooth)
+{
+}
