@@ -6,6 +6,9 @@
 #include "input.h"
 
 extern double wantedHeightOffset;
+extern bool viewLockRequested;
+extern bool viewLocked;
+
 const double pi = std::acos(-1);
 
 inline vr::HmdQuaternion_t HmdQuaternion_Init( double w, double x, double y, double z )
@@ -263,6 +266,12 @@ void ExampleDriver::ControllerDevice::RunFrame()
         if (getJoyButton(BTN_DPAD_RIGHT)) { // Height reset
             wantedHeightOffset = 0.0;
         }
+        if (getJoyButton(BTN_DPAD_LEFT)) {
+            viewLockRequested = true;
+        } else {
+            viewLockRequested = false;
+        }
+
     }
     else if (this->handedness_ == Handedness::RIGHT) {
         GetDriver()->GetInput()->UpdateBooleanComponent(application_button_click_component_, getJoyButton(BTN_MODE), 0); //Application Menu

@@ -9,6 +9,9 @@
 #include <openvr_driver.h>
 
 double wantedHeightOffset = 0;
+bool viewLockRequested = false;
+bool viewLocked = false;
+
 using namespace vr;
 
 const double pi = std::acos(-1);
@@ -42,6 +45,7 @@ inline HmdQuaternion_t HmdQuaternion_Product(HmdQuaternion_t quat_a, HmdQuaterni
 	quat_res.z = quat_a.w*quat_b.z + quat_a.x*quat_b.y - quat_a.y*quat_b.x + quat_a.z*quat_b.w;
 	return quat_res;
 }
+
 ExampleDriver::HMDDevice::HMDDevice(std::string serial):serial_(serial)
 {
 }
@@ -72,17 +76,40 @@ void ExampleDriver::HMDDevice::Update()
     double previous_position[3] = { 0 };
     std::copy(std::begin(pose.vecPosition), std::end(pose.vecPosition), std::begin(previous_position));
 
-    }
-    //send the new position and rotation from the pipe to the tracker object
-    pose.vecPosition[0] = wantedPose[0];
-    pose.vecPosition[1] = wantedPose[1] + wantedHeightOffset;
-    pose.vecPosition[2] = wantedPose[2];
+    if (viewLockRequested && !viewLocked) {
+        viewLockPose[0] = wantedPose[0];
+        viewLockPose[1] = wantedPose[1] + wantedHeightOffset;
+        viewLockPose[2] = wantedPose[2];
 
-    pose.qRotation.w = wantedPose[3];
-    pose.qRotation.x = wantedPose[4];
-    pose.qRotation.y = wantedPose[5];
-    pose.qRotation.z = wantedPose[6];
+        viewLockPose[3] = wantedPose[3];
+        viewLockPose[4] = wantedPose[4];
+        viewLockPose[5] = wantedPose[5];
+        viewLockPose[6] = wantedPose[6];
+        viewLocked = true;
+    }
+    if (viewLockRequested && viewLocked) {
+        //send the new position and rotation from the pipe to the tracker object
+        pose.vecPosition[0] = wantedPose[0];
+        pose.vecPosition[1] = wantedPose[1] + wantedHeightOffset;
+        pose.vecPosition[2] = wantedPose[2];
+
+        pose.qRotation.w = viewLockPose[3];
+        pose.qRotation.x = viewLockPose[4];
+        pose.qRotation.y = viewLockPose[5];
+        pose.qRotation.z = viewLockPose[6];
+    } else {
+        //send the new position and rotation from the pipe to the tracker object
+        pose.vecPosition[0] = wantedPose[0];
+        pose.vecPosition[1] = wantedPose[1] + wantedHeightOffset;
+        pose.vecPosition[2] = wantedPose[2];
+
+        pose.qRotation.w = wantedPose[3];
+        pose.qRotation.x = wantedPose[4];
+        pose.qRotation.y = wantedPose[5];
+        pose.qRotation.z = wantedPose[6];
         viewLocked = false;
+    }
+
 
     if (pose_time_delta_seconds > 0)            //unless we get two pose updates at the same time, update velocity so steamvr can do some interpolation
     {

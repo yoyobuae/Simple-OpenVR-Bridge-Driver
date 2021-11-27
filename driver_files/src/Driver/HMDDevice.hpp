@@ -46,6 +46,8 @@ namespace ExampleDriver {
 
         double wantedPose[7] = { 0,0,0,1,0,0,0 };
         double wantedTimeOffset = 0;
+        double viewLockPose[7] = { 0,0,0,1,0,0,0 };
+
         vr::DriverPose_t last_pose_ = IVRDevice::MakeDefaultPose();
 
         uint32_t window_x_ = 0;
