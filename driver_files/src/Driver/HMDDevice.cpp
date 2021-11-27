@@ -235,8 +235,8 @@ vr::EVRInitError ExampleDriver::HMDDevice::Activate(uint32_t unObjectId)
     // Set some universe ID (Must be 2 or higher)
     GetDriver()->GetProperties()->SetUint64Property(props, vr::Prop_CurrentUniverseId_Uint64, 2);
 
-    // Set the IPD to be whatever steam has configured
-    GetDriver()->GetProperties()->SetFloatProperty(props, vr::Prop_UserIpdMeters_Float, vr::VRSettings()->GetFloat(vr::k_pch_SteamVR_Section, vr::k_pch_SteamVR_IPD_Float));
+    // Set the IPD to zero since we'll be displaying on desktop
+    GetDriver()->GetProperties()->SetFloatProperty(props, vr::Prop_UserIpdMeters_Float, 0.f);
 
     // Set the display FPS
     GetDriver()->GetProperties()->SetFloatProperty(props, vr::Prop_DisplayFrequency_Float, 60.f);
@@ -255,7 +255,7 @@ vr::EVRInitError ExampleDriver::HMDDevice::Activate(uint32_t unObjectId)
     GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceStandby_String, "{example}/icons/hmd_not_ready.png");
     GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceAlertLow_String, "{example}/icons/hmd_not_ready.png");
 
-    
+
 
 
     return vr::EVRInitError::VRInitError_None;
@@ -329,8 +329,14 @@ void ExampleDriver::HMDDevice::GetEyeOutputViewport(vr::EVREye eEye, uint32_t* p
 
 void ExampleDriver::HMDDevice::GetProjectionRaw(vr::EVREye eEye, float* pfLeft, float* pfRight, float* pfTop, float* pfBottom)
 {
-    *pfLeft = -1;
-    *pfRight = 1;
+    if (eEye == vr::EVREye::Eye_Left) {
+        *pfLeft = -1.0;
+        *pfRight = 0.0;
+    }
+    else {
+        *pfLeft = 0.0;
+        *pfRight = 1.0;
+    }
     *pfTop = -1;
     *pfBottom = 1;
 }
