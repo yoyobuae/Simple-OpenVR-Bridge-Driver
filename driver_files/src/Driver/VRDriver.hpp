@@ -9,7 +9,6 @@
 #include <Driver/IVRDriver.hpp>
 #include <Driver/IVRDevice.hpp>
 #include <Driver/TrackerDevice.hpp>
-#include <Driver/ControllerDevice.hpp>
 #include <Driver/TrackingReferenceDevice.hpp>
 
 #include "Ipc.hpp"
@@ -41,7 +40,7 @@ namespace ExampleDriver {
 
     private:
         Ipc::Server ipcServer;
-        std::shared_ptr<ControllerDevice> fakemove_;
+        bool fakemove_ = false;
         std::vector<std::shared_ptr<IVRDevice>> devices_;
         std::vector<std::shared_ptr<IVRDevice>> trackers_;
         std::vector<std::shared_ptr<TrackingReferenceDevice>> stations_;

@@ -52,44 +52,6 @@ std::string ExampleDriver::ControllerDevice::GetSerial()
     return this->serial_;
 }
 
-long long counter = 0;
-
-void ExampleDriver::ControllerDevice::SetDirection(float x, float y, float rx, float ry, float a, float b)
-{
-    if(x == 0.0f && y == 0.0f)
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->joystick_touch_component_, false, 0);
-    else
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->joystick_touch_component_, true, 0);
-
-    GetDriver()->GetInput()->UpdateScalarComponent(this->joystick_x_component_, x, 0);
-    GetDriver()->GetInput()->UpdateScalarComponent(this->joystick_y_component_, y, 0);
-
-    if (rx == 0.0f && ry == 0.0f)
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->trackpad_touch_component_, false, 0);
-    else
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->trackpad_touch_component_, true, 0);
-
-    GetDriver()->GetInput()->UpdateScalarComponent(this->trackpad_x_component_, rx, 0);
-    GetDriver()->GetInput()->UpdateScalarComponent(this->trackpad_y_component_, ry, 0);
-
-    if (a > 0.5) {
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->a_button_click_component_, true, 0);
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->a_button_touch_component_, true, 0);
-    }
-    else {
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->a_button_click_component_, false, 0);
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->a_button_touch_component_, false, 0);
-    }
-
-    if (b > 0.5) {
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->b_button_click_component_, true, 0);
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->b_button_touch_component_, true, 0);
-    }
-    else {
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->b_button_click_component_, false, 0);
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->b_button_touch_component_, false, 0);
-    }
-}
 
 void ExampleDriver::ControllerDevice::Update()
 {

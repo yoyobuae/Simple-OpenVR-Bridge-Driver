@@ -68,31 +68,24 @@ void ExampleDriver::VRDriver::PipeThread()
             {
                 if (word == "addhipmove")
                 {
-                    if (fakemove_ != nullptr)
+                    if (fakemove_)
                     {
                         s = s + " alreadyadded";
                     }
                     else
                     {
-                        fakemove_ = std::make_shared<ControllerDevice>("Example_ControllerDevice", ControllerDevice::Handedness::ANY);
-                        this->AddDevice(fakemove_);
-
+                        fakemove_ = true;
                         s = s + " added";
                     }
                 }
                 else if (word == "hipmoveinput")
                 {
-                    if (fakemove_ == nullptr)
+                    if (fakemove_ == false)
                     {
                         s = s + " notspawned";
                     }
                     else
                     {
-                        float x, y, rx, ry, a, b;
-                        iss >> x; iss >> y; iss >> rx; iss >> ry; iss >> a; iss >> b;
-
-                        fakemove_->SetDirection(x, y, rx, ry, a, b);
-
                         s = s + " updated";
                     }
                 }
