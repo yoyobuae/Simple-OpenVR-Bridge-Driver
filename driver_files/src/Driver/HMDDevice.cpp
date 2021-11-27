@@ -6,6 +6,41 @@
 #define _stricmp strcasecmp
 #endif
 
+#include <openvr_driver.h>
+
+using namespace vr;
+
+const double pi = std::acos(-1);
+
+inline HmdQuaternion_t HmdQuaternion_Init( double w, double x, double y, double z )
+{
+	HmdQuaternion_t quat;
+	quat.w = w;
+	quat.x = x;
+	quat.y = y;
+	quat.z = z;
+	return quat;
+}
+
+inline HmdQuaternion_t HmdQuaternion_Init_Angle( double angle, double x, double y, double z )
+{
+	double rad = 2 * pi * angle / 360;
+	double rad_2 = rad / 2;
+	return HmdQuaternion_Init(std::cos(rad_2),
+				  -std::sin(rad_2) * x,
+				  -std::sin(rad_2) * y,
+				  -std::sin(rad_2) * z);
+}
+
+inline HmdQuaternion_t HmdQuaternion_Product(HmdQuaternion_t quat_a, HmdQuaternion_t quat_b)
+{
+	HmdQuaternion_t quat_res;
+	quat_res.w = quat_a.w*quat_b.w - quat_a.x*quat_b.x - quat_a.y*quat_b.y - quat_a.z*quat_b.z;
+	quat_res.x = quat_a.w*quat_b.x + quat_a.x*quat_b.w + quat_a.y*quat_b.z - quat_a.z*quat_b.y;
+	quat_res.y = quat_a.w*quat_b.y - quat_a.x*quat_b.z + quat_a.y*quat_b.w + quat_a.z*quat_b.x;
+	quat_res.z = quat_a.w*quat_b.z + quat_a.x*quat_b.y - quat_a.y*quat_b.x + quat_a.z*quat_b.w;
+	return quat_res;
+}
 ExampleDriver::HMDDevice::HMDDevice(std::string serial):serial_(serial)
 {
 }
@@ -19,44 +54,53 @@ void ExampleDriver::HMDDevice::Update()
 {
     if (this->device_index_ == vr::k_unTrackedDeviceIndexInvalid)
         return;
-    
+
     // Setup pose for this frame
-    auto pose = IVRDevice::MakeDefaultPose();
+    auto pose = this->last_pose_;
 
-    float delta_seconds = GetDriver()->GetLastFrameTime().count() / 1000.0f;
+    // Update time delta (for working out velocity)
+    std::chrono::milliseconds time_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+    double time_since_epoch_seconds = time_since_epoch.count() / 1000.0;
+    double pose_time_delta_seconds = (time_since_epoch - _pose_timestamp).count() / 1000.0;
 
-    // Get orientation
-    this->rot_y_ += (1.0f * (Key::isPressed(Key::RIGHT) == 0) - 1.0f * (Key::isPressed(Key::LEFT) == 0)) * delta_seconds;
-    this->rot_x_ += (-1.0f * (Key::isPressed(Key::UP) == 0) + 1.0f * (Key::isPressed(Key::DOWN) == 0)) * delta_seconds;
-    this->rot_x_ = std::fmax(this->rot_x_, -3.14159f/2);
-    this->rot_x_ = std::fmin(this->rot_x_, 3.14159f/2);
+    // Update pose timestamp
 
-    linalg::vec<float, 4> y_quat{ 0, std::sinf(this->rot_y_ / 2), 0, std::cosf(this->rot_y_ / 2) };
+    _pose_timestamp = time_since_epoch;
 
-    linalg::vec<float, 4> x_quat{ std::sinf(this->rot_x_ / 2), 0, 0, std::cosf(this->rot_x_ / 2) };
+    // Copy the previous position data
+    double previous_position[3] = { 0 };
+    std::copy(std::begin(pose.vecPosition), std::end(pose.vecPosition), std::begin(previous_position));
 
-    linalg::vec<float, 4> pose_rot = linalg::qmul(y_quat, x_quat);
-
-    pose.qRotation.w = (float) pose_rot.w;
-    pose.qRotation.x = (float) pose_rot.x;
-    pose.qRotation.y = (float) pose_rot.y;
-    pose.qRotation.z = (float) pose_rot.z;
-
-    // Update position based on rotation
-    linalg::vec<float, 3> forward_vec{-1.0f * (Key::isPressed(Key::D) == 0) + 1.0f * (Key::isPressed(Key::A) == 0), 0, 0};
-    linalg::vec<float, 3> right_vec{0, 0, 1.0f * (Key::isPressed(Key::W) == 0) - 1.0f * (Key::isPressed(Key::S) == 0) };
-    linalg::vec<float, 3> final_dir = forward_vec + right_vec;
-    if (linalg::length(final_dir) > 0.01) {
-        final_dir = linalg::normalize(final_dir) * (float)delta_seconds;
-        final_dir = linalg::qrot(pose_rot, final_dir);
-        this->pos_x_ += final_dir.x;
-        this->pos_y_ += final_dir.y;
-        this->pos_z_ += final_dir.z;
     }
+    //send the new position and rotation from the pipe to the tracker object
+    pose.vecPosition[0] = wantedPose[0];
+    pose.vecPosition[1] = wantedPose[1];
+    pose.vecPosition[2] = wantedPose[2];
 
-    pose.vecPosition[0] = (float) this->pos_x_;
-    pose.vecPosition[1] = (float) this->pos_y_;
-    pose.vecPosition[2] = (float) this->pos_z_;
+    pose.qRotation.w = wantedPose[3];
+    pose.qRotation.x = wantedPose[4];
+    pose.qRotation.y = wantedPose[5];
+    pose.qRotation.z = wantedPose[6];
+        viewLocked = false;
+
+    if (pose_time_delta_seconds > 0)            //unless we get two pose updates at the same time, update velocity so steamvr can do some interpolation
+    {
+        pose.vecVelocity[0] = 0.8 * pose.vecVelocity[0] + 0.2 * (pose.vecPosition[0] - previous_position[0]) / pose_time_delta_seconds;
+        pose.vecVelocity[1] = 0.8 * pose.vecVelocity[1] + 0.2 * (pose.vecPosition[1] - previous_position[1]) / pose_time_delta_seconds;
+        pose.vecVelocity[2] = 0.8 * pose.vecVelocity[2] + 0.2 * (pose.vecPosition[2] - previous_position[2]) / pose_time_delta_seconds;
+    }
+    pose.poseTimeOffset = this->wantedTimeOffset;
+
+
+    //pose.vecVelocity[0] = (pose.vecPosition[0] - previous_position[0]) / pose_time_delta_seconds;
+    //pose.vecVelocity[1] = (pose.vecPosition[1] - previous_position[1]) / pose_time_delta_seconds;
+    //pose.vecVelocity[2] = (pose.vecPosition[2] - previous_position[2]) / pose_time_delta_seconds;
+
+    // Compensate for difference in orientation between tracker and forward HMD direction
+    // Should probably be made adjustable
+    pose.qDriverFromHeadRotation =
+        HmdQuaternion_Product(HmdQuaternion_Init_Angle( -45, 0, 1, 0 ),
+                              HmdQuaternion_Init_Angle( 30, 1, 0, 0 ));
 
     // Post pose
     GetDriver()->GetDriverHost()->TrackedDevicePoseUpdated(this->device_index_, pose, sizeof(vr::DriverPose_t));
@@ -65,10 +109,46 @@ void ExampleDriver::HMDDevice::Update()
 
 void ExampleDriver::HMDDevice::UpdatePos(double a, double b, double c, double time, double smoothing)
 {
+    this->wantedPose[0] = (1 - smoothing) * this->wantedPose[0] + smoothing * a;
+    this->wantedPose[1] = (1 - smoothing) * this->wantedPose[1] + smoothing * b;
+    this->wantedPose[2] = (1 - smoothing) * this->wantedPose[2] + smoothing * c;
+
+    this->wantedTimeOffset = time;
+
 }
 
 void ExampleDriver::HMDDevice::UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing)
 {
+    //lerp
+    double dot = qx * this->wantedPose[4] + qy * this->wantedPose[5] + qz * this->wantedPose[6] + qw * this->wantedPose[3];
+
+    if (dot < 0)
+    {
+        this->wantedPose[3] = smoothing * qw - (1 - smoothing) * this->wantedPose[3];
+        this->wantedPose[4] = smoothing * qx - (1 - smoothing) * this->wantedPose[4];
+        this->wantedPose[5] = smoothing * qy - (1 - smoothing) * this->wantedPose[5];
+        this->wantedPose[6] = smoothing * qz - (1 - smoothing) * this->wantedPose[6];
+    }
+    else
+    {
+        this->wantedPose[3] = smoothing * qw + (1 - smoothing) * this->wantedPose[3];
+        this->wantedPose[4] = smoothing * qx + (1 - smoothing) * this->wantedPose[4];
+        this->wantedPose[5] = smoothing * qy + (1 - smoothing) * this->wantedPose[5];
+        this->wantedPose[6] = smoothing * qz + (1 - smoothing) * this->wantedPose[6];
+    }
+    //normalize
+    double mag = sqrt(this->wantedPose[3] * this->wantedPose[3] +
+        this->wantedPose[4] * this->wantedPose[4] +
+        this->wantedPose[5] * this->wantedPose[5] +
+        this->wantedPose[6] * this->wantedPose[6]);
+
+    this->wantedPose[3] /= mag;
+    this->wantedPose[4] /= mag;
+    this->wantedPose[5] /= mag;
+    this->wantedPose[6] /= mag;
+
+    this->wantedTimeOffset = time;
+
 }
 
 DeviceType ExampleDriver::HMDDevice::GetDeviceType()

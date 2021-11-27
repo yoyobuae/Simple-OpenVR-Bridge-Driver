@@ -45,7 +45,12 @@ namespace ExampleDriver {
         std::string serial_;
         Handedness handedness_;
 
-        vr::DriverPose_t last_pose_;
+        std::chrono::milliseconds _pose_timestamp;
+
+        double wantedPose[7] = { 0,0,0,1,0,0,0 };
+        double wantedTimeOffset = 0;
+
+        vr::DriverPose_t last_pose_ = IVRDevice::MakeDefaultPose();
 
         bool did_vibrate_ = false;
         float vibrate_anim_state_ = 0.f;

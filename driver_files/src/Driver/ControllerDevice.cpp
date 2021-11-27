@@ -3,6 +3,38 @@
 #include "ControllerDevice.hpp"
 #include "Key.hpp"
 
+const double pi = std::acos(-1);
+
+inline vr::HmdQuaternion_t HmdQuaternion_Init( double w, double x, double y, double z )
+{
+    vr::HmdQuaternion_t quat;
+	quat.w = w;
+	quat.x = x;
+	quat.y = y;
+	quat.z = z;
+	return quat;
+}
+
+inline vr::HmdQuaternion_t HmdQuaternion_Init_Angle( double angle, double x, double y, double z )
+{
+	double rad = 2 * pi * angle / 360;
+	double rad_2 = rad / 2;
+	return HmdQuaternion_Init(std::cos(rad_2),
+				  -std::sin(rad_2) * x,
+				  -std::sin(rad_2) * y,
+				  -std::sin(rad_2) * z);
+}
+
+inline vr::HmdQuaternion_t HmdQuaternion_Product(vr::HmdQuaternion_t quat_a, vr::HmdQuaternion_t quat_b)
+{
+    vr::HmdQuaternion_t quat_res;
+	quat_res.w = quat_a.w*quat_b.w - quat_a.x*quat_b.x - quat_a.y*quat_b.y - quat_a.z*quat_b.z;
+	quat_res.x = quat_a.w*quat_b.x + quat_a.x*quat_b.w + quat_a.y*quat_b.z - quat_a.z*quat_b.y;
+	quat_res.y = quat_a.w*quat_b.y - quat_a.x*quat_b.z + quat_a.y*quat_b.w + quat_a.z*quat_b.x;
+	quat_res.z = quat_a.w*quat_b.z + quat_a.x*quat_b.y - quat_a.y*quat_b.x + quat_a.z*quat_b.w;
+	return quat_res;
+}
+
 ExampleDriver::ControllerDevice::ControllerDevice(std::string serial, ControllerDevice::Handedness handedness):
     serial_(serial),
     handedness_(handedness)
@@ -81,26 +113,45 @@ void ExampleDriver::ControllerDevice::Update()
     }
 
     // Setup pose for this frame
-    auto pose = IVRDevice::MakeDefaultPose();
-    /*
-    // Check if we need to press any buttons (I am only hooking up the A button here but the process is the same for the others)
-    // You will still need to go into the games button bindings and hook up each one (ie. a to left click, b to right click, etc.) for them to work properly
-    if (counter%200 < 100) {
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->a_button_click_component_, true, 0);
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->a_button_touch_component_, true, 0);
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->joystick_touch_component_, true, 0);
-        GetDriver()->GetInput()->UpdateScalarComponent(this->joystick_y_component_, 1.0f, 0);
-    }
-    else {
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->a_button_click_component_, false, 0);
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->a_button_touch_component_, false, 0);
-        GetDriver()->GetInput()->UpdateBooleanComponent(this->joystick_touch_component_, false, 0);
-        GetDriver()->GetInput()->UpdateScalarComponent(this->joystick_y_component_, 0.0f, 0);
-    }
+    auto pose = this->last_pose_;
 
-    counter++;
+    // Update time delta (for working out velocity)
+    std::chrono::milliseconds time_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+    double time_since_epoch_seconds = time_since_epoch.count() / 1000.0;
+    double pose_time_delta_seconds = (time_since_epoch - _pose_timestamp).count() / 1000.0;
 
-    */
+    // Update pose timestamp
+
+    _pose_timestamp = time_since_epoch;
+
+    // Copy the previous position data
+    double previous_position[3] = { 0 };
+    std::copy(std::begin(pose.vecPosition), std::end(pose.vecPosition), std::begin(previous_position));
+
+    //send the new position and rotation from the pipe to the tracker object
+    pose.vecPosition[0] = wantedPose[0];
+    pose.vecPosition[1] = wantedPose[1];
+    pose.vecPosition[2] = wantedPose[2];
+
+    pose.qRotation.w = wantedPose[3];
+    pose.qRotation.x = wantedPose[4];
+    pose.qRotation.y = wantedPose[5];
+    pose.qRotation.z = wantedPose[6];
+
+
+    if (pose_time_delta_seconds > 0)            //unless we get two pose updates at the same time, update velocity so steamvr can do some interpolation
+    {
+        pose.vecVelocity[0] = 0.8 * pose.vecVelocity[0] + 0.2 * (pose.vecPosition[0] - previous_position[0]) / pose_time_delta_seconds;
+        pose.vecVelocity[1] = 0.8 * pose.vecVelocity[1] + 0.2 * (pose.vecPosition[1] - previous_position[1]) / pose_time_delta_seconds;
+        pose.vecVelocity[2] = 0.8 * pose.vecVelocity[2] + 0.2 * (pose.vecPosition[2] - previous_position[2]) / pose_time_delta_seconds;
+    }
+    pose.poseTimeOffset = this->wantedTimeOffset;
+
+
+    //pose.vecVelocity[0] = (pose.vecPosition[0] - previous_position[0]) / pose_time_delta_seconds;
+    //pose.vecVelocity[1] = (pose.vecPosition[1] - previous_position[1]) / pose_time_delta_seconds;
+    //pose.vecVelocity[2] = (pose.vecPosition[2] - previous_position[2]) / pose_time_delta_seconds;
+
 
     // Post pose
     GetDriver()->GetDriverHost()->TrackedDevicePoseUpdated(this->device_index_, pose, sizeof(vr::DriverPose_t));
@@ -109,10 +160,46 @@ void ExampleDriver::ControllerDevice::Update()
 
 void ExampleDriver::ControllerDevice::UpdatePos(double a, double b, double c, double time, double smoothing)
 {
+    this->wantedPose[0] = (1 - smoothing) * this->wantedPose[0] + smoothing * a;
+    this->wantedPose[1] = (1 - smoothing) * this->wantedPose[1] + smoothing * b;
+    this->wantedPose[2] = (1 - smoothing) * this->wantedPose[2] + smoothing * c;
+
+    this->wantedTimeOffset = time;
+
 }
 
 void ExampleDriver::ControllerDevice::UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing)
 {
+    //lerp
+    double dot = qx * this->wantedPose[4] + qy * this->wantedPose[5] + qz * this->wantedPose[6] + qw * this->wantedPose[3];
+
+    if (dot < 0)
+    {
+        this->wantedPose[3] = smoothing * qw - (1 - smoothing) * this->wantedPose[3];
+        this->wantedPose[4] = smoothing * qx - (1 - smoothing) * this->wantedPose[4];
+        this->wantedPose[5] = smoothing * qy - (1 - smoothing) * this->wantedPose[5];
+        this->wantedPose[6] = smoothing * qz - (1 - smoothing) * this->wantedPose[6];
+    }
+    else
+    {
+        this->wantedPose[3] = smoothing * qw + (1 - smoothing) * this->wantedPose[3];
+        this->wantedPose[4] = smoothing * qx + (1 - smoothing) * this->wantedPose[4];
+        this->wantedPose[5] = smoothing * qy + (1 - smoothing) * this->wantedPose[5];
+        this->wantedPose[6] = smoothing * qz + (1 - smoothing) * this->wantedPose[6];
+    }
+    //normalize
+    double mag = sqrt(this->wantedPose[3] * this->wantedPose[3] +
+        this->wantedPose[4] * this->wantedPose[4] +
+        this->wantedPose[5] * this->wantedPose[5] +
+        this->wantedPose[6] * this->wantedPose[6]);
+
+    this->wantedPose[3] /= mag;
+    this->wantedPose[4] /= mag;
+    this->wantedPose[5] /= mag;
+    this->wantedPose[6] /= mag;
+
+    this->wantedTimeOffset = time;
+
 }
 
 DeviceType ExampleDriver::ControllerDevice::GetDeviceType()
@@ -143,54 +230,46 @@ vr::EVRInitError ExampleDriver::ControllerDevice::Activate(uint32_t unObjectId)
     // Get the properties handle
     auto props = GetDriver()->GetProperties()->TrackedDeviceToPropertyContainer(this->device_index_);
 
-    // Setup inputs and outputs
-   
-    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/joystick/click", &this->joystick_click_component_);
-    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/joystick/touch", &this->joystick_touch_component_);
-    GetDriver()->GetInput()->CreateScalarComponent(props, "/input/joystick/x", &this->joystick_x_component_, vr::EVRScalarType::VRScalarType_Absolute, vr::EVRScalarUnits::VRScalarUnits_NormalizedTwoSided);
-    GetDriver()->GetInput()->CreateScalarComponent(props, "/input/joystick/y", &this->joystick_y_component_, vr::EVRScalarType::VRScalarType_Absolute, vr::EVRScalarUnits::VRScalarUnits_NormalizedTwoSided);
+    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_ControllerType_String, "vive_controller");
+    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_InputProfilePath_String, "{htc}/input/vive_controller_profile.json");
 
-    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/trackpad/click", &this->trackpad_click_component_);
-    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/trackpad/touch", &this->trackpad_touch_component_);
-    GetDriver()->GetInput()->CreateScalarComponent(props, "/input/trackpad/x", &this->trackpad_x_component_, vr::EVRScalarType::VRScalarType_Absolute, vr::EVRScalarUnits::VRScalarUnits_NormalizedTwoSided);
-    GetDriver()->GetInput()->CreateScalarComponent(props, "/input/trackpad/y", &this->trackpad_y_component_, vr::EVRScalarType::VRScalarType_Absolute, vr::EVRScalarUnits::VRScalarUnits_NormalizedTwoSided);
+    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_ModelNumber_String, "ViveMV");
+    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_ManufacturerName_String, "HTC");
+    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_RenderModelName_String, "vr_controller_vive_1_5");
 
-    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/a/click", &this->a_button_click_component_);
-    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/a/touch", &this->a_button_touch_component_);
+    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_TrackingSystemName_String, "VR Controller");
+    GetDriver()->GetProperties()->SetInt32Property(props, vr::Prop_DeviceClass_Int32, vr::TrackedDeviceClass_Controller);
 
-    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/b/click", &this->b_button_click_component_);
-    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/b/touch", &this->b_button_touch_component_);
+    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_SerialNumber_String, this->serial_.c_str());
 
-    // Set some universe ID (Must be 2 or higher)
-    GetDriver()->GetProperties()->SetUint64Property(props, vr::Prop_CurrentUniverseId_Uint64, 2);
-    
-    // Set up a model "number" (not needed but good to have)
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_ModelNumber_String, "hip_locomotion");
-
-    // Set up a render model path
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_RenderModelName_String, "vr_controller_05_wireless_b");
+    uint64_t supportedButtons = 0xFFFFFFFFFFFFFFFFULL;
+    GetDriver()->GetProperties()->SetUint64Property(props, vr::Prop_SupportedButtons_Uint64, supportedButtons);
 
     // Give SteamVR a hint at what hand this controller is for
 
     GetDriver()->GetProperties()->SetInt32Property(props, vr::Prop_ControllerRoleHint_Int32, vr::ETrackedControllerRole::TrackedControllerRole_Treadmill);
 
-    // Set controller profile
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_InputProfilePath_String, "{apriltagtrackers}/input/hipmove_bindings.json");
+    // this file tells the UI what to show the user for binding this controller as well as what default bindings should
+    // be for legacy or other apps
+    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_InputProfilePath_String, "{htc}/input/vive_controller_profile.json");
 
-    // Change the icon depending on which handedness this controller is using (ANY uses right)
-    std::string controller_handedness_str = this->handedness_ == Handedness::LEFT ? "left" : "right";
-    std::string controller_ready_file = "other_status_ready.png";
-    std::string controller_not_ready_file = "other_status_off.png";
+    //  Buttons handles
+    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/application_menu/click", &application_button_click_component_);
+    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/grip/click", &grip_button_click_component_);
+    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/system/click", &system_button_click_component_);
+    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/trackpad/click", &trackpad_button_click_component_);
+    GetDriver()->GetInput()->CreateBooleanComponent(props, "/input/trackpad/touch", &trackpad_touch_component_);
 
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceReady_String, controller_ready_file.c_str());
+    // Analog handles
+    GetDriver()->GetInput()->CreateScalarComponent(props, "/input/trackpad/x", &trackpad_x_component_, vr::EVRScalarType::VRScalarType_Absolute, vr::EVRScalarUnits::VRScalarUnits_NormalizedTwoSided);
+    GetDriver()->GetInput()->CreateScalarComponent(props, "/input/trackpad/y", &trackpad_y_component_, vr::EVRScalarType::VRScalarType_Absolute, vr::EVRScalarUnits::VRScalarUnits_NormalizedTwoSided);
+    GetDriver()->GetInput()->CreateScalarComponent(props, "/input/trigger/value", &trigger_value_component_, vr::EVRScalarType::VRScalarType_Absolute, vr::EVRScalarUnits::VRScalarUnits_NormalizedOneSided);
 
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceOff_String, controller_not_ready_file.c_str());
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceSearching_String, controller_not_ready_file.c_str());
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceSearchingAlert_String, controller_not_ready_file.c_str());
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceReadyAlert_String, controller_not_ready_file.c_str());
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceNotReady_String, controller_not_ready_file.c_str());
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceStandby_String, controller_not_ready_file.c_str());
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceAlertLow_String, controller_not_ready_file.c_str());
+    GetDriver()->GetProperties()->SetInt32Property(props, vr::Prop_Axis0Type_Int32, vr::k_eControllerAxis_TrackPad);
+
+    // create our haptic component
+    GetDriver()->GetInput()->CreateHapticComponent(props, "/output/haptic", &haptic_component_);
+
 
     return vr::EVRInitError::VRInitError_None;
 }
