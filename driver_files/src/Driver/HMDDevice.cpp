@@ -330,12 +330,12 @@ void ExampleDriver::HMDDevice::GetEyeOutputViewport(vr::EVREye eEye, uint32_t* p
 void ExampleDriver::HMDDevice::GetProjectionRaw(vr::EVREye eEye, float* pfLeft, float* pfRight, float* pfTop, float* pfBottom)
 {
     if (eEye == vr::EVREye::Eye_Left) {
-        *pfLeft = -1.0;
+        *pfLeft = -1.706161137;
         *pfRight = 0.0;
     }
     else {
         *pfLeft = 0.0;
-        *pfRight = 1.0;
+        *pfRight = 1.706161137;
     }
     *pfTop = -1;
     *pfBottom = 1;
