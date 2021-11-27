@@ -64,5 +64,6 @@ namespace ExampleDriver {
         vr::VRInputComponentHandle_t trackpad_y_component_ = 0;
         vr::VRInputComponentHandle_t trigger_value_component_ = 0;
         vr::VRInputComponentHandle_t haptic_component_ = 0;
+        vr::VRInputComponentHandle_t skeleton_component_ = 0;
     };
 };
