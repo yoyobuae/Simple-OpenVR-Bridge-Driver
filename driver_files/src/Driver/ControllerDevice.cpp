@@ -3,6 +3,8 @@
 #include "ControllerDevice.hpp"
 #include "Key.hpp"
 
+#include "input.h"
+
 const double pi = std::acos(-1);
 
 inline vr::HmdQuaternion_t HmdQuaternion_Init( double w, double x, double y, double z )
@@ -206,6 +208,64 @@ vr::TrackedDeviceIndex_t ExampleDriver::ControllerDevice::GetDeviceIndex()
 
 void ExampleDriver::ControllerDevice::RunFrame()
 {
+    if (this->handedness_ == Handedness::LEFT) {
+        GetDriver()->GetInput()->UpdateBooleanComponent(application_button_click_component_, getJoyButton(BTN_Z), 0); //Application Menu
+        GetDriver()->GetInput()->UpdateBooleanComponent(grip_button_click_component_, getJoyButton(BTN_TL2), 0); //Grip
+        GetDriver()->GetInput()->UpdateBooleanComponent(system_button_click_component_, getJoyButton(BTN_SELECT), 0); //System
+        GetDriver()->GetInput()->UpdateBooleanComponent(trackpad_button_click_component_, getJoyButton(BTN_THUMBL), 0); //Trackpad
+
+        float x = static_cast<float>(getJoyAxis(ABS_X))/32768.0f;
+        float y = static_cast<float>(getJoyAxis(ABS_Y))/-32768.0f;
+        float norm = hypot(x, y);
+        float arct = atan2(y, x);
+
+        // Deadzone and touch calcs
+        bool trackpad_touch = norm > 0.125f;
+        float trackpad_norm = norm > 0.25f ? (norm - 0.25f) / 0.75f : 0.0f;
+        float trackpad_x = trackpad_norm * cos(arct);
+        float trackpad_y = trackpad_norm * sin(arct);
+
+        GetDriver()->GetInput()->UpdateBooleanComponent(trackpad_touch_component_, trackpad_touch, 0); //Trackpad
+        GetDriver()->GetInput()->UpdateScalarComponent(trackpad_x_component_, trackpad_x, 0); //Trackpad x
+        GetDriver()->GetInput()->UpdateScalarComponent(trackpad_y_component_, trackpad_y, 0); //Trackpad y
+
+
+        if (getJoyButton(BTN_TL)) { //Trigger
+            GetDriver()->GetInput()->UpdateScalarComponent(trigger_value_component_, 1.0, 0);
+        } else {
+            GetDriver()->GetInput()->UpdateScalarComponent(trigger_value_component_, 0.0, 0);
+        }
+
+    }
+    else if (this->handedness_ == Handedness::RIGHT) {
+        GetDriver()->GetInput()->UpdateBooleanComponent(application_button_click_component_, getJoyButton(BTN_MODE), 0); //Application Menu
+        GetDriver()->GetInput()->UpdateBooleanComponent(grip_button_click_component_, getJoyButton(BTN_TR2), 0); //Grip
+        GetDriver()->GetInput()->UpdateBooleanComponent(system_button_click_component_, getJoyButton(BTN_START), 0); //System
+        GetDriver()->GetInput()->UpdateBooleanComponent(trackpad_button_click_component_, getJoyButton(BTN_THUMBR), 0); //Trackpad
+
+        float x = static_cast<float>(getJoyAxis(ABS_RX))/32768.0f;
+        float y = static_cast<float>(getJoyAxis(ABS_RY))/-32768.0f;
+        float norm = hypot(x, y);
+        float arct = atan2(y, x);
+
+        // Deadzone and touch calcs
+        bool trackpad_touch = norm > 0.125f;
+        float trackpad_norm = norm > 0.25f ? (norm - 0.25f) / 0.75f : 0.0f;
+        float trackpad_x = trackpad_norm * cos(arct);
+        float trackpad_y = trackpad_norm * sin(arct);
+
+        GetDriver()->GetInput()->UpdateBooleanComponent(trackpad_touch_component_, trackpad_touch, 0); //Trackpad
+        GetDriver()->GetInput()->UpdateScalarComponent(trackpad_x_component_, trackpad_x, 0); //Trackpad x
+        GetDriver()->GetInput()->UpdateScalarComponent(trackpad_y_component_, trackpad_y, 0); //Trackpad y
+
+
+        if (getJoyButton(BTN_TR)) { //Trigger
+            GetDriver()->GetInput()->UpdateScalarComponent(trigger_value_component_, 1.0, 0);
+        } else {
+            GetDriver()->GetInput()->UpdateScalarComponent(trigger_value_component_, 0.0, 0);
+        }
+
+    }
 }
 
 vr::EVRInitError ExampleDriver::ControllerDevice::Activate(uint32_t unObjectId)
