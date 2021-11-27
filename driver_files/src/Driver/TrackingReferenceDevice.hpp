@@ -19,8 +19,11 @@ namespace ExampleDriver {
             virtual std::string GetSerial() override;
             virtual void Update() override;
             virtual void UpdatePose(double a, double b, double c, double qw, double qx, double qy, double qz);
+            virtual void UpdatePos(double a, double b, double c, double time, double smoothing) override;
+            virtual void UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing) override;
             virtual vr::TrackedDeviceIndex_t GetDeviceIndex() override;
             virtual DeviceType GetDeviceType() override;
+            virtual void RunFrame() override;
 
             virtual vr::EVRInitError Activate(uint32_t unObjectId) override;
             virtual void Deactivate() override;

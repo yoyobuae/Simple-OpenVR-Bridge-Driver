@@ -65,6 +65,14 @@ void ExampleDriver::TrackingReferenceDevice::UpdatePose(double a, double b, doub
     this->last_pose_ = pose;
 }
 
+void ExampleDriver::TrackingReferenceDevice::UpdatePos(double a, double b, double c, double time, double smoothing)
+{
+}
+
+void ExampleDriver::TrackingReferenceDevice::UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing)
+{
+}
+
 DeviceType ExampleDriver::TrackingReferenceDevice::GetDeviceType()
 {
     return DeviceType::TRACKING_REFERENCE;
@@ -73,6 +81,10 @@ DeviceType ExampleDriver::TrackingReferenceDevice::GetDeviceType()
 vr::TrackedDeviceIndex_t ExampleDriver::TrackingReferenceDevice::GetDeviceIndex()
 {
     return this->device_index_;
+}
+
+void ExampleDriver::TrackingReferenceDevice::RunFrame()
+{
 }
 
 vr::EVRInitError ExampleDriver::TrackingReferenceDevice::Activate(uint32_t unObjectId)

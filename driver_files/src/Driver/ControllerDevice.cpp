@@ -107,6 +107,14 @@ void ExampleDriver::ControllerDevice::Update()
     this->last_pose_ = pose;
 }
 
+void ExampleDriver::ControllerDevice::UpdatePos(double a, double b, double c, double time, double smoothing)
+{
+}
+
+void ExampleDriver::ControllerDevice::UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing)
+{
+}
+
 DeviceType ExampleDriver::ControllerDevice::GetDeviceType()
 {
     return DeviceType::CONTROLLER;
@@ -120,6 +128,10 @@ ExampleDriver::ControllerDevice::Handedness ExampleDriver::ControllerDevice::Get
 vr::TrackedDeviceIndex_t ExampleDriver::ControllerDevice::GetDeviceIndex()
 {
     return this->device_index_;
+}
+
+void ExampleDriver::ControllerDevice::RunFrame()
+{
 }
 
 vr::EVRInitError ExampleDriver::ControllerDevice::Activate(uint32_t unObjectId)

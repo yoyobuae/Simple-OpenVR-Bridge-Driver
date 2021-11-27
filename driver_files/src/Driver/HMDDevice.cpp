@@ -63,6 +63,14 @@ void ExampleDriver::HMDDevice::Update()
     this->last_pose_ = pose;
 }
 
+void ExampleDriver::HMDDevice::UpdatePos(double a, double b, double c, double time, double smoothing)
+{
+}
+
+void ExampleDriver::HMDDevice::UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing)
+{
+}
+
 DeviceType ExampleDriver::HMDDevice::GetDeviceType()
 {
     return DeviceType::HMD;
@@ -71,6 +79,10 @@ DeviceType ExampleDriver::HMDDevice::GetDeviceType()
 vr::TrackedDeviceIndex_t ExampleDriver::HMDDevice::GetDeviceIndex()
 {
     return this->device_index_;
+}
+
+void ExampleDriver::HMDDevice::RunFrame()
+{
 }
 
 vr::EVRInitError ExampleDriver::HMDDevice::Activate(uint32_t unObjectId)

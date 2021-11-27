@@ -20,6 +20,10 @@ namespace ExampleDriver {
         /// </summary>
         virtual void Update() = 0;
 
+        virtual void UpdatePos(double a, double b, double c, double time, double smoothing) = 0;
+
+        virtual void UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing) = 0;
+
         /// <summary>
         /// Returns the OpenVR device index
         /// This should be 0 for HMDs
@@ -49,6 +53,8 @@ namespace ExampleDriver {
 
             return out_pose;
         }
+
+        virtual void RunFrame() = 0;
 
         // Inherited via ITrackedDeviceServerDriver
         virtual vr::EVRInitError Activate(uint32_t unObjectId) = 0;

@@ -43,7 +43,7 @@ namespace ExampleDriver {
         Ipc::Server ipcServer;
         std::shared_ptr<ControllerDevice> fakemove_;
         std::vector<std::shared_ptr<IVRDevice>> devices_;
-        std::vector<std::shared_ptr<TrackerDevice>> trackers_;
+        std::vector<std::shared_ptr<IVRDevice>> trackers_;
         std::vector<std::shared_ptr<TrackingReferenceDevice>> stations_;
         std::vector<vr::VREvent_t> openvr_events_;
         std::chrono::milliseconds frame_timing_ = std::chrono::milliseconds(16);
