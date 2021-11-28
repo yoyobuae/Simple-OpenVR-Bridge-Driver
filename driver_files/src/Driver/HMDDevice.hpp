@@ -36,6 +36,7 @@ namespace ExampleDriver {
             virtual void GetProjectionRaw(vr::EVREye eEye, float* pfLeft, float* pfRight, float* pfTop, float* pfBottom) override;
             virtual vr::DistortionCoordinates_t ComputeDistortion(vr::EVREye eEye, float fU, float fV) override;
 
+            virtual void Log(std::string message);
             virtual void save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time) override;
             virtual int get_next_pose(double req_time, double pred[]) override;
             virtual void reinit(int msaved, double mtime, double msmooth) override;

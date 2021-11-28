@@ -35,6 +35,7 @@ namespace ExampleDriver {
             virtual void DebugRequest(const char* pchRequest, char* pchResponseBuffer, uint32_t unResponseBufferSize) override;
             virtual vr::DriverPose_t GetPose() override;
 
+            virtual void Log(std::string message);
             virtual void save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time) override;
             virtual int get_next_pose(double req_time, double pred[]) override;
             virtual void reinit(int msaved, double mtime, double msmooth) override;

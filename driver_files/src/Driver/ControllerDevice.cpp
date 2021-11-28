@@ -581,6 +581,12 @@ vr::DriverPose_t ExampleDriver::ControllerDevice::GetPose()
     return last_pose_;
 }
 
+void ExampleDriver::ControllerDevice::Log(std::string message)
+{
+    std::string message_endl = message + "\n";
+    vr::VRDriverLog()->Log(message_endl.c_str());
+}
+
 void ExampleDriver::ControllerDevice::save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time)
 {
 }

@@ -299,6 +299,13 @@ vr::DistortionCoordinates_t ExampleDriver::HMDDevice::ComputeDistortion(vr::EVRE
     coordinates.rfRed[1] = fV;
     return coordinates;
 }
+
+void ExampleDriver::HMDDevice::Log(std::string message)
+{
+    std::string message_endl = message + "\n";
+    vr::VRDriverLog()->Log(message_endl.c_str());
+}
+
 void ExampleDriver::HMDDevice::save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time)
 {
 }
