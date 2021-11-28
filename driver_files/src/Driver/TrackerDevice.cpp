@@ -1,6 +1,6 @@
 #include "TrackerDevice.hpp"
 
-void normalizeQuat(double pose[])
+static void normalizeQuat(double pose[])
 {
 
     //normalize

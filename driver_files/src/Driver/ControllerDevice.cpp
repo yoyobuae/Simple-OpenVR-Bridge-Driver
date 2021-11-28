@@ -41,6 +41,20 @@ inline vr::HmdQuaternion_t HmdQuaternion_Product(vr::HmdQuaternion_t quat_a, vr:
 	return quat_res;
 }
 
+static void normalizeQuat(double pose[])
+{
+    //normalize
+    double mag = sqrt(pose[3] * pose[3] +
+        pose[4] * pose[4] +
+        pose[5] * pose[5] +
+        pose[6] * pose[6]);
+
+    pose[3] /= mag;
+    pose[4] /= mag;
+    pose[5] /= mag;
+    pose[6] /= mag;
+}
+
 ExampleDriver::ControllerDevice::ControllerDevice(std::string serial, ControllerDevice::Handedness handedness):
     serial_(serial),
     handedness_(handedness)
@@ -305,6 +319,22 @@ void ExampleDriver::ControllerDevice::Update()
     double previous_position[3] = { 0 };
     std::copy(std::begin(pose.vecPosition), std::end(pose.vecPosition), std::begin(previous_position));
 
+    double next_pose[7];
+    if (get_next_pose(0, next_pose) != 0)
+        return;
+
+    normalizeQuat(next_pose);
+
+    double wantedPose[7];
+    wantedPose[0] = next_pose[0] * (1 - smoothing) + pose.vecPosition[0] * smoothing;
+    wantedPose[1] = next_pose[1] * (1 - smoothing) + pose.vecPosition[1] * smoothing;
+    wantedPose[2] = next_pose[2] * (1 - smoothing) + pose.vecPosition[2] * smoothing;
+
+    wantedPose[3] = next_pose[3] * (1 - smoothing) + pose.qRotation.w * smoothing;
+    wantedPose[4] = next_pose[4] * (1 - smoothing) + pose.qRotation.x * smoothing;
+    wantedPose[5] = next_pose[5] * (1 - smoothing) + pose.qRotation.y * smoothing;
+    wantedPose[6] = next_pose[6] * (1 - smoothing) + pose.qRotation.z * smoothing;
+
     //send the new position and rotation from the pipe to the tracker object
     pose.vecPosition[0] = wantedPose[0];
     pose.vecPosition[1] = wantedPose[1] + wantedHeightOffset;
@@ -315,15 +345,18 @@ void ExampleDriver::ControllerDevice::Update()
     pose.qRotation.y = wantedPose[5];
     pose.qRotation.z = wantedPose[6];
 
+    //normalize
+    double mag = sqrt(pose.qRotation.w * pose.qRotation.w +
+        pose.qRotation.x * pose.qRotation.x +
+        pose.qRotation.y * pose.qRotation.y +
+        pose.qRotation.z * pose.qRotation.z);
 
-    if (pose_time_delta_seconds > 0)            //unless we get two pose updates at the same time, update velocity so steamvr can do some interpolation
-    {
-        pose.vecVelocity[0] = 0.8 * pose.vecVelocity[0] + 0.2 * (pose.vecPosition[0] - previous_position[0]) / pose_time_delta_seconds;
-        pose.vecVelocity[1] = 0.8 * pose.vecVelocity[1] + 0.2 * (pose.vecPosition[1] - previous_position[1]) / pose_time_delta_seconds;
-        pose.vecVelocity[2] = 0.8 * pose.vecVelocity[2] + 0.2 * (pose.vecPosition[2] - previous_position[2]) / pose_time_delta_seconds;
-    }
-    pose.poseTimeOffset = this->wantedTimeOffset;
+    pose.qRotation.w /= mag;
+    pose.qRotation.x /= mag;
+    pose.qRotation.y /= mag;
+    pose.qRotation.z /= mag;
 
+    pose.poseTimeOffset = 0;
 
     // Recalibrate controller orientation on button press
     if (this->handedness_ == Handedness::LEFT) {
@@ -587,15 +620,183 @@ void ExampleDriver::ControllerDevice::Log(std::string message)
     vr::VRDriverLog()->Log(message_endl.c_str());
 }
 
-void ExampleDriver::ControllerDevice::save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time)
+void ExampleDriver::ControllerDevice::save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time_offset)
 {
+    double next_pose[7];
+    int pose_valid = get_next_pose(time_offset, next_pose);
+
+    double dot = qx * next_pose[4] + qy * next_pose[5] + qz * next_pose[6] + qw * next_pose[3];
+
+    if (dot < 0)
+    {
+        qx = -qx;
+        qy = -qy;
+        qz = -qz;
+        qw = -qw;
+    }
+
+    //update times
+    std::chrono::milliseconds time_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+    double time_since_epoch_seconds = time_since_epoch.count() / 1000.0;
+
+    double curr_time = time_since_epoch_seconds;
+    double time_since_update = curr_time - this->last_update;
+    this->last_update = curr_time;
+
+    for (int i = 0; i < max_saved; i++)
+    {
+        if (prev_positions[i][0] >= 0)
+            prev_positions[i][0] += time_since_update;
+        if (prev_positions[i][0] > max_time)
+            prev_positions[i][0] = -1;
+    }
+
+    double time = time_offset;
+
+    double dist = sqrt(pow(next_pose[0] - a, 2) + pow(next_pose[1] - b, 2) + pow(next_pose[2] - c, 2));
+    if (pose_valid == 0 && dist > 0.5)
+    {
+        Log("Dropped a pose! its error was " + std::to_string(dist));
+        Log("Height vs predicted height:" + std::to_string(b) + " " + std::to_string(next_pose[1]));
+        return;
+    }
+
+    dist = sqrt(pow(a, 2) + pow(b, 2) + pow(c, 2));
+    if (dist > 10)
+    {
+        Log("Dropped a pose! Was outside of playspace: " + std::to_string(dist));
+        return;
+    }
+
+    if (time > max_time)
+        return;
+
+    if (prev_positions[max_saved - 1][0] < time && prev_positions[max_saved - 1][0] >= 0)
+        return;
+
+    int i = 0;
+    while (prev_positions[i][0] < time&& prev_positions[i][0] >= 0)
+        i++;
+
+    for (int j = max_saved - 1; j > i; j--)
+    {
+        if (prev_positions[j - 1][0] >= 0)
+        {
+            for (int k = 0; k < 8; k++)
+            {
+                prev_positions[j][k] = prev_positions[j - 1][k];
+            }
+        }
+        else
+        {
+            prev_positions[j][0] = -1;
+        }
+    }
+    prev_positions[i][0] = time;
+    prev_positions[i][1] = a;
+    prev_positions[i][2] = b;
+    prev_positions[i][3] = c;
+    prev_positions[i][4] = qw;
+    prev_positions[i][5] = qx;
+    prev_positions[i][6] = qy;
+    prev_positions[i][7] = qz;
+    return;
 }
 
-int ExampleDriver::ControllerDevice::get_next_pose(double req_time, double pred[])
+int ExampleDriver::ControllerDevice::get_next_pose(double time_offset, double pred[])
 {
-    return -1;
+    int statuscode = 0;
+
+    std::chrono::milliseconds time_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+    double time_since_epoch_seconds = time_since_epoch.count() / 1000.0;
+
+    double req_time = time_since_epoch_seconds - time_offset;
+
+    double new_time = last_update - req_time;
+
+    if (new_time < -0.2)      //limit prediction to max 0.2 second into the future to prevent your feet from being yeeted into oblivion
+    {
+        new_time = -0.2;
+        statuscode = 1;
+    }
+
+    int curr_saved = 0;
+
+    double avg_time = 0;
+    double avg_time2 = 0;
+    for (int i = 0; i < max_saved; i++)
+    {
+        if (prev_positions[i][0] < 0)
+            break;
+        curr_saved++;
+        avg_time += prev_positions[i][0];
+        avg_time2 += (prev_positions[i][0] * prev_positions[i][0]);
+    }
+
+    if (curr_saved < 4)
+    {
+        statuscode = -1;
+        return statuscode;
+    }
+    avg_time /= curr_saved;
+    avg_time2 /= curr_saved;
+
+    double st = 0;
+    for (int j = 0; j < curr_saved; j++)
+    {
+        st += ((prev_positions[j][0] - avg_time) * (prev_positions[j][0] - avg_time));
+    }
+    st = sqrt(st * (1.0 / curr_saved));
+
+
+    for (int i = 1; i < 8; i++)
+    {
+        double avg_val = 0;
+        double avg_val2 = 0;
+        double avg_tval = 0;
+        for (int ii = 0; ii < curr_saved; ii++)
+        {
+            avg_val += prev_positions[ii][i];
+            avg_tval += (prev_positions[ii][0] * prev_positions[ii][i]);
+            avg_val2 += (prev_positions[ii][i] * prev_positions[ii][i]);
+        }
+        avg_val /= curr_saved;
+        avg_tval /= curr_saved;
+        avg_val2 /= curr_saved;
+
+        double sv = 0;
+        for (int j = 0; j < curr_saved; j++)
+        {
+            sv += ((prev_positions[j][i] - avg_val) * (prev_positions[j][i] - avg_val));
+        }
+        sv = sqrt(sv * (1.0 / curr_saved));
+
+        double rxy = (avg_tval - (avg_val * avg_time)) / sqrt((avg_time2 - (avg_time * avg_time)) * (avg_val2 - (avg_val * avg_val)));
+        double b = rxy * (sv / st);
+        double a = avg_val - (b * avg_time);
+
+        double y = a + b * new_time;
+        if (abs(avg_val2 - (avg_val * avg_val)) < 0.00000001)               //bloody floating point rounding errors
+            y = avg_val;
+
+        pred[i - 1] = y;
+    }
+    return statuscode;
 }
 
 void ExampleDriver::ControllerDevice::reinit(int msaved, double mtime, double msmooth)
 {
+    if (msaved < 5)     //prevent having too few values to calculate linear interpolation, and prevent crash on 0
+        msaved = 5;
+
+    if (msmooth < 0)
+        msmooth = 0;
+    else if (msmooth > 0.99)
+        msmooth = 0.99;
+
+    max_saved = msaved;
+    std::vector<std::vector<double>> temp(msaved, std::vector<double>(8,-1));
+    prev_positions = temp;
+    max_time = mtime;
+    smoothing = msmooth;
 }

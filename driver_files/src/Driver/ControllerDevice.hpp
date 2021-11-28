@@ -36,8 +36,8 @@ namespace ExampleDriver {
             virtual vr::DriverPose_t GetPose() override;
 
             virtual void Log(std::string message);
-            virtual void save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time) override;
-            virtual int get_next_pose(double req_time, double pred[]) override;
+            virtual void save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time_offset) override;
+            virtual int get_next_pose(double time_offset, double pred[]) override;
             virtual void reinit(int msaved, double mtime, double msmooth) override;
     private:
         vr::TrackedDeviceIndex_t device_index_ = vr::k_unTrackedDeviceIndexInvalid;
@@ -45,9 +45,6 @@ namespace ExampleDriver {
         Handedness handedness_;
 
         std::chrono::milliseconds _pose_timestamp;
-
-        double wantedPose[7] = { 0,0,0,1,0,0,0 };
-        double wantedTimeOffset = 0;
 
         vr::DriverPose_t last_pose_ = IVRDevice::MakeDefaultPose();
 
@@ -64,5 +61,11 @@ namespace ExampleDriver {
         vr::VRInputComponentHandle_t trigger_value_component_ = 0;
         vr::VRInputComponentHandle_t haptic_component_ = 0;
         vr::VRInputComponentHandle_t skeleton_component_ = 0;
+
+        int max_saved = 10;
+        std::vector<std::vector<double>> prev_positions; // prev_positions[:][0] je time since now (koliko cajta nazaj se je naredl, torej min-->max)
+        double last_update = 0;
+        double max_time = 1;
+        double smoothing = 0;
     };
 };
