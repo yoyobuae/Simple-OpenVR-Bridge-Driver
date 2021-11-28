@@ -81,10 +81,6 @@ vr::TrackedDeviceIndex_t ExampleDriver::TrackingReferenceDevice::GetDeviceIndex(
     return this->device_index_;
 }
 
-void ExampleDriver::TrackingReferenceDevice::RunFrame()
-{
-}
-
 vr::EVRInitError ExampleDriver::TrackingReferenceDevice::Activate(uint32_t unObjectId)
 {
     this->device_index_ = unObjectId;

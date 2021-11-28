@@ -52,140 +52,6 @@ std::string ExampleDriver::ControllerDevice::GetSerial()
     return this->serial_;
 }
 
-
-void ExampleDriver::ControllerDevice::Update()
-{
-    if (this->device_index_ == vr::k_unTrackedDeviceIndexInvalid)
-        return;
-
-    // Check if we need to keep vibrating
-    if (this->did_vibrate_) {
-        this->vibrate_anim_state_ += (GetDriver()->GetLastFrameTime().count()/1000.f);
-        if (this->vibrate_anim_state_ > 1.0f) {
-            this->did_vibrate_ = false;
-            this->vibrate_anim_state_ = 0.0f;
-        }
-    }
-
-    // Setup pose for this frame
-    auto pose = this->last_pose_;
-
-    // Update time delta (for working out velocity)
-    std::chrono::milliseconds time_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-    double time_since_epoch_seconds = time_since_epoch.count() / 1000.0;
-    double pose_time_delta_seconds = (time_since_epoch - _pose_timestamp).count() / 1000.0;
-
-    // Update pose timestamp
-
-    _pose_timestamp = time_since_epoch;
-
-    // Copy the previous position data
-    double previous_position[3] = { 0 };
-    std::copy(std::begin(pose.vecPosition), std::end(pose.vecPosition), std::begin(previous_position));
-
-    //send the new position and rotation from the pipe to the tracker object
-    pose.vecPosition[0] = wantedPose[0];
-    pose.vecPosition[1] = wantedPose[1] + wantedHeightOffset;
-    pose.vecPosition[2] = wantedPose[2];
-
-    pose.qRotation.w = wantedPose[3];
-    pose.qRotation.x = wantedPose[4];
-    pose.qRotation.y = wantedPose[5];
-    pose.qRotation.z = wantedPose[6];
-
-
-    if (pose_time_delta_seconds > 0)            //unless we get two pose updates at the same time, update velocity so steamvr can do some interpolation
-    {
-        pose.vecVelocity[0] = 0.8 * pose.vecVelocity[0] + 0.2 * (pose.vecPosition[0] - previous_position[0]) / pose_time_delta_seconds;
-        pose.vecVelocity[1] = 0.8 * pose.vecVelocity[1] + 0.2 * (pose.vecPosition[1] - previous_position[1]) / pose_time_delta_seconds;
-        pose.vecVelocity[2] = 0.8 * pose.vecVelocity[2] + 0.2 * (pose.vecPosition[2] - previous_position[2]) / pose_time_delta_seconds;
-    }
-    pose.poseTimeOffset = this->wantedTimeOffset;
-
-
-    // Recalibrate controller orientation on button press
-    if (this->handedness_ == Handedness::LEFT) {
-        if (getJoyButton(BTN_TRIGGER_HAPPY2)) {
-            pose.qDriverFromHeadRotation = HmdQuaternion_Init(-pose.qRotation.w,
-                                                              pose.qRotation.x,
-                                                              pose.qRotation.y,
-                                                              pose.qRotation.z);
-        }
-    }
-    else if (this->handedness_ == Handedness::RIGHT) {
-        if (getJoyButton(BTN_TRIGGER_HAPPY3)) {
-            pose.qDriverFromHeadRotation = HmdQuaternion_Init(-pose.qRotation.w,
-                                                              pose.qRotation.x,
-                                                              pose.qRotation.y,
-                                                              pose.qRotation.z);
-        }
-    }
-
-    // Post pose
-    GetDriver()->GetDriverHost()->TrackedDevicePoseUpdated(this->device_index_, pose, sizeof(vr::DriverPose_t));
-    this->last_pose_ = pose;
-
-}
-
-void ExampleDriver::ControllerDevice::UpdatePos(double a, double b, double c, double time, double smoothing)
-{
-    this->wantedPose[0] = (1 - smoothing) * this->wantedPose[0] + smoothing * a;
-    this->wantedPose[1] = (1 - smoothing) * this->wantedPose[1] + smoothing * b;
-    this->wantedPose[2] = (1 - smoothing) * this->wantedPose[2] + smoothing * c;
-
-    this->wantedTimeOffset = time;
-
-}
-
-void ExampleDriver::ControllerDevice::UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing)
-{
-    //lerp
-    double dot = qx * this->wantedPose[4] + qy * this->wantedPose[5] + qz * this->wantedPose[6] + qw * this->wantedPose[3];
-
-    if (dot < 0)
-    {
-        this->wantedPose[3] = smoothing * qw - (1 - smoothing) * this->wantedPose[3];
-        this->wantedPose[4] = smoothing * qx - (1 - smoothing) * this->wantedPose[4];
-        this->wantedPose[5] = smoothing * qy - (1 - smoothing) * this->wantedPose[5];
-        this->wantedPose[6] = smoothing * qz - (1 - smoothing) * this->wantedPose[6];
-    }
-    else
-    {
-        this->wantedPose[3] = smoothing * qw + (1 - smoothing) * this->wantedPose[3];
-        this->wantedPose[4] = smoothing * qx + (1 - smoothing) * this->wantedPose[4];
-        this->wantedPose[5] = smoothing * qy + (1 - smoothing) * this->wantedPose[5];
-        this->wantedPose[6] = smoothing * qz + (1 - smoothing) * this->wantedPose[6];
-    }
-    //normalize
-    double mag = sqrt(this->wantedPose[3] * this->wantedPose[3] +
-        this->wantedPose[4] * this->wantedPose[4] +
-        this->wantedPose[5] * this->wantedPose[5] +
-        this->wantedPose[6] * this->wantedPose[6]);
-
-    this->wantedPose[3] /= mag;
-    this->wantedPose[4] /= mag;
-    this->wantedPose[5] /= mag;
-    this->wantedPose[6] /= mag;
-
-    this->wantedTimeOffset = time;
-
-}
-
-DeviceType ExampleDriver::ControllerDevice::GetDeviceType()
-{
-    return DeviceType::CONTROLLER;
-}
-
-ExampleDriver::ControllerDevice::Handedness ExampleDriver::ControllerDevice::GetHandedness()
-{
-    return this->handedness_;
-}
-
-vr::TrackedDeviceIndex_t ExampleDriver::ControllerDevice::GetDeviceIndex()
-{
-    return this->device_index_;
-}
-
 static const int NUM_BONES = 31;
 
 static vr::VRBoneTransform_t left_open_hand_pose[NUM_BONES] = {
@@ -409,8 +275,78 @@ vr::BoneIndex_t pinkyBones[] = {
         eBone_Aux_PinkyFinger,
 };
 
-void ExampleDriver::ControllerDevice::RunFrame()
+void ExampleDriver::ControllerDevice::Update()
 {
+    if (this->device_index_ == vr::k_unTrackedDeviceIndexInvalid)
+        return;
+
+    // Check if we need to keep vibrating
+    if (this->did_vibrate_) {
+        this->vibrate_anim_state_ += (GetDriver()->GetLastFrameTime().count()/1000.f);
+        if (this->vibrate_anim_state_ > 1.0f) {
+            this->did_vibrate_ = false;
+            this->vibrate_anim_state_ = 0.0f;
+        }
+    }
+
+    // Setup pose for this frame
+    auto pose = this->last_pose_;
+
+    // Update time delta (for working out velocity)
+    std::chrono::milliseconds time_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+    double time_since_epoch_seconds = time_since_epoch.count() / 1000.0;
+    double pose_time_delta_seconds = (time_since_epoch - _pose_timestamp).count() / 1000.0;
+
+    // Update pose timestamp
+
+    _pose_timestamp = time_since_epoch;
+
+    // Copy the previous position data
+    double previous_position[3] = { 0 };
+    std::copy(std::begin(pose.vecPosition), std::end(pose.vecPosition), std::begin(previous_position));
+
+    //send the new position and rotation from the pipe to the tracker object
+    pose.vecPosition[0] = wantedPose[0];
+    pose.vecPosition[1] = wantedPose[1] + wantedHeightOffset;
+    pose.vecPosition[2] = wantedPose[2];
+
+    pose.qRotation.w = wantedPose[3];
+    pose.qRotation.x = wantedPose[4];
+    pose.qRotation.y = wantedPose[5];
+    pose.qRotation.z = wantedPose[6];
+
+
+    if (pose_time_delta_seconds > 0)            //unless we get two pose updates at the same time, update velocity so steamvr can do some interpolation
+    {
+        pose.vecVelocity[0] = 0.8 * pose.vecVelocity[0] + 0.2 * (pose.vecPosition[0] - previous_position[0]) / pose_time_delta_seconds;
+        pose.vecVelocity[1] = 0.8 * pose.vecVelocity[1] + 0.2 * (pose.vecPosition[1] - previous_position[1]) / pose_time_delta_seconds;
+        pose.vecVelocity[2] = 0.8 * pose.vecVelocity[2] + 0.2 * (pose.vecPosition[2] - previous_position[2]) / pose_time_delta_seconds;
+    }
+    pose.poseTimeOffset = this->wantedTimeOffset;
+
+
+    // Recalibrate controller orientation on button press
+    if (this->handedness_ == Handedness::LEFT) {
+        if (getJoyButton(BTN_TRIGGER_HAPPY2)) {
+            pose.qDriverFromHeadRotation = HmdQuaternion_Init(-pose.qRotation.w,
+                                                              pose.qRotation.x,
+                                                              pose.qRotation.y,
+                                                              pose.qRotation.z);
+        }
+    }
+    else if (this->handedness_ == Handedness::RIGHT) {
+        if (getJoyButton(BTN_TRIGGER_HAPPY3)) {
+            pose.qDriverFromHeadRotation = HmdQuaternion_Init(-pose.qRotation.w,
+                                                              pose.qRotation.x,
+                                                              pose.qRotation.y,
+                                                              pose.qRotation.z);
+        }
+    }
+
+    // Post pose
+    GetDriver()->GetDriverHost()->TrackedDevicePoseUpdated(this->device_index_, pose, sizeof(vr::DriverPose_t));
+    this->last_pose_ = pose;
+
     if (this->handedness_ == Handedness::LEFT) {
         GetDriver()->GetInput()->UpdateBooleanComponent(application_button_click_component_, getJoyButton(BTN_Z), 0); //Application Menu
         GetDriver()->GetInput()->UpdateBooleanComponent(grip_button_click_component_, getJoyButton(BTN_TL2), 0); //Grip
@@ -543,6 +479,65 @@ void ExampleDriver::ControllerDevice::RunFrame()
         GetDriver()->GetInput()->UpdateSkeletonComponent(skeleton_component_, vr::VRSkeletalMotionRange_WithController, hand_pose, NUM_BONES);
         GetDriver()->GetInput()->UpdateSkeletonComponent(skeleton_component_, vr::VRSkeletalMotionRange_WithoutController, hand_pose, NUM_BONES);
     }
+}
+
+void ExampleDriver::ControllerDevice::UpdatePos(double a, double b, double c, double time, double smoothing)
+{
+    this->wantedPose[0] = (1 - smoothing) * this->wantedPose[0] + smoothing * a;
+    this->wantedPose[1] = (1 - smoothing) * this->wantedPose[1] + smoothing * b;
+    this->wantedPose[2] = (1 - smoothing) * this->wantedPose[2] + smoothing * c;
+
+    this->wantedTimeOffset = time;
+
+}
+
+void ExampleDriver::ControllerDevice::UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing)
+{
+    //lerp
+    double dot = qx * this->wantedPose[4] + qy * this->wantedPose[5] + qz * this->wantedPose[6] + qw * this->wantedPose[3];
+
+    if (dot < 0)
+    {
+        this->wantedPose[3] = smoothing * qw - (1 - smoothing) * this->wantedPose[3];
+        this->wantedPose[4] = smoothing * qx - (1 - smoothing) * this->wantedPose[4];
+        this->wantedPose[5] = smoothing * qy - (1 - smoothing) * this->wantedPose[5];
+        this->wantedPose[6] = smoothing * qz - (1 - smoothing) * this->wantedPose[6];
+    }
+    else
+    {
+        this->wantedPose[3] = smoothing * qw + (1 - smoothing) * this->wantedPose[3];
+        this->wantedPose[4] = smoothing * qx + (1 - smoothing) * this->wantedPose[4];
+        this->wantedPose[5] = smoothing * qy + (1 - smoothing) * this->wantedPose[5];
+        this->wantedPose[6] = smoothing * qz + (1 - smoothing) * this->wantedPose[6];
+    }
+    //normalize
+    double mag = sqrt(this->wantedPose[3] * this->wantedPose[3] +
+        this->wantedPose[4] * this->wantedPose[4] +
+        this->wantedPose[5] * this->wantedPose[5] +
+        this->wantedPose[6] * this->wantedPose[6]);
+
+    this->wantedPose[3] /= mag;
+    this->wantedPose[4] /= mag;
+    this->wantedPose[5] /= mag;
+    this->wantedPose[6] /= mag;
+
+    this->wantedTimeOffset = time;
+
+}
+
+DeviceType ExampleDriver::ControllerDevice::GetDeviceType()
+{
+    return DeviceType::CONTROLLER;
+}
+
+ExampleDriver::ControllerDevice::Handedness ExampleDriver::ControllerDevice::GetHandedness()
+{
+    return this->handedness_;
+}
+
+vr::TrackedDeviceIndex_t ExampleDriver::ControllerDevice::GetDeviceIndex()
+{
+    return this->device_index_;
 }
 
 vr::EVRInitError ExampleDriver::ControllerDevice::Activate(uint32_t unObjectId)

@@ -54,8 +54,6 @@ namespace ExampleDriver {
             return out_pose;
         }
 
-        virtual void RunFrame() = 0;
-
         // Inherited via ITrackedDeviceServerDriver
         virtual vr::EVRInitError Activate(uint32_t unObjectId) = 0;
         virtual void Deactivate() = 0;

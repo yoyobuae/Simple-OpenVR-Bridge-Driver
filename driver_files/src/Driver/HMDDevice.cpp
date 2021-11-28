@@ -184,10 +184,6 @@ vr::TrackedDeviceIndex_t ExampleDriver::HMDDevice::GetDeviceIndex()
     return this->device_index_;
 }
 
-void ExampleDriver::HMDDevice::RunFrame()
-{
-}
-
 vr::EVRInitError ExampleDriver::HMDDevice::Activate(uint32_t unObjectId)
 {
     this->device_index_ = unObjectId;

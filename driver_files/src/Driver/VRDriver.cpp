@@ -257,11 +257,8 @@ void ExampleDriver::VRDriver::RunFrame()
 
     this->frame_timing_avg_ = this->frame_timing_avg_ * 0.9 + ((double)this->frame_timing_.count()) * 0.1;
 
-    for (auto& device : this->trackers_)
-        device->Update();
     for (auto& device : this->devices_)
-       device->RunFrame();
-
+        device->Update();
 }
 
 bool ExampleDriver::VRDriver::ShouldBlockStandbyMode()

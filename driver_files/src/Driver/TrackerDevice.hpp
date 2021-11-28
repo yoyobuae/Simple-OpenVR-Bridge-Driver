@@ -30,7 +30,6 @@ namespace ExampleDriver {
             virtual vr::TrackedDeviceIndex_t GetDeviceIndex() override;
             virtual DeviceType GetDeviceType() override;
             virtual void Log(std::string message);
-            virtual void RunFrame() override;
 
             virtual vr::EVRInitError Activate(uint32_t unObjectId) override;
             virtual void Deactivate() override;

@@ -21,7 +21,6 @@ namespace ExampleDriver {
             virtual void UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing) override;
             virtual vr::TrackedDeviceIndex_t GetDeviceIndex() override;
             virtual DeviceType GetDeviceType() override;
-            virtual void RunFrame() override;
 
             virtual vr::EVRInitError Activate(uint32_t unObjectId) override;
             virtual void Deactivate() override;
