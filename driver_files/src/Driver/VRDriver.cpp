@@ -13,22 +13,11 @@ vr::EVRInitError ExampleDriver::VRDriver::Init(vr::IVRDriverContext* pDriverCont
 
     Log("Activating AprilTag Driver Bridge v0.5.4...");
 
-    // Add a HMD
-    //this->AddDevice(std::make_shared<HMDDevice>("Example_HMDDevice"));
-
-    // Add a couple controllers
-    //this->AddDevice(std::make_shared<ControllerDevice>("Example_ControllerDevice", ControllerDevice::Handedness::ANY));
-    //this->AddDevice(std::make_shared<ControllerDevice>("Example_ControllerDevice_Right", ControllerDevice::Handedness::RIGHT));
-    
     ipcServer.init("ApriltagPipeIn");
 
     std::thread pipeThread(&ExampleDriver::VRDriver::PipeThread, this);
     pipeThread.detach();
   
-    // Add a couple tracking references
-    //this->AddDevice(std::make_shared<TrackingReferenceDevice>("Example_TrackingReference_A"));
-    //this->AddDevice(std::make_shared<TrackingReferenceDevice>("Example_TrackingReference_B"));
-
     Log("AprilTag Driver Loaded Successfully");
 
 	return vr::VRInitError_None;
@@ -45,19 +34,11 @@ void ExampleDriver::VRDriver::PipeThread()
     for (;;) 
     {
         Ipc::Connection ipcConnection = ipcServer.accept();
-        //MessageBoxA(NULL, "connected", "Example Driver", MB_OK);
 
         //we go and read it into our buffer
         if (ipcConnection.recv(buffer, sizeof(buffer)))
         {
-            //MessageBoxA(NULL, "connected2", "Example Driver", MB_OK);
-            //convert our buffer to string
-
-            //MessageBoxA(NULL, buffer, "Example Driver", MB_OK);
-
             std::string rec = buffer;
-
-            //Log("Received message: " + rec);
 
             std::istringstream iss(rec);
             std::string word;
@@ -91,7 +72,6 @@ void ExampleDriver::VRDriver::PipeThread()
                 }
                 else if (word == "addtracker")
                 {
-                    //MessageBoxA(NULL, word.c_str(), "Example Driver", MB_OK);
                     std::string name, role;
 
                     iss >> name;
@@ -166,10 +146,6 @@ void ExampleDriver::VRDriver::PipeThread()
                         if(time < 0)
                             time = -time;
                         this->trackers_[idx]->save_current_pose(a, b, c, qw, qx, qy, qz, time);
-                        //this->trackers_[idx]->UpdatePos(a, b, c, time, 1-smoothing);
-                        //this->trackers_[idx]->UpdateRot(qw, qx, qy, qz, time, 1-smoothing);
-
-                        //this->trackers_[idx]->Update();
                         s = s + " updated";
                     }
                     else
@@ -178,43 +154,6 @@ void ExampleDriver::VRDriver::PipeThread()
                     }
 
                 }
-                /*                                      no longer supported by new smoothing
-                else if (word == "updatepos")
-                {
-                    int idx;
-                    double a, b, c, time, smoothing;
-                    iss >> idx; iss >> a; iss >> b; iss >> c; iss >> time; iss >> smoothing;
-
-                    if (idx < this->trackers_.size())
-                    {
-                        this->trackers_[idx]->UpdatePos(a, b, c, time, smoothing);
-                        this->trackers_[idx]->Update();
-                        s = s + " updated";
-                    }
-                    else
-                    {
-                        s = s + " idinvalid";
-                    }
-
-                }
-                else if (word == "updaterot")
-                {
-                    int idx;
-                    double qw, qx, qy, qz, time, smoothing;
-                    iss >> qw; iss >> qx; iss >> qy; iss >> qz; iss >> time; iss >> smoothing;
-
-                    if (idx < this->trackers_.size())
-                    {
-                        this->trackers_[idx]->UpdateRot(qw, qx, qy, qz, time, smoothing);
-                        this->trackers_[idx]->Update();
-                        s = s + " updated";
-                    }
-                    else
-                    {
-                        s = s + " idinvalid";
-                    }
-
-                }*/
                 else if (word == "getdevicepose")
                 {
                     int idx;
@@ -297,19 +236,11 @@ void ExampleDriver::VRDriver::PipeThread()
             // = length of string + terminating '\0' !!!
             ipcConnection.send(s.c_str(), (s.length() + 1));
         }
-        /*
-        }
-        else
-        {
-            Sleep(1);
-        }
-        */
     }
 }
 
 void ExampleDriver::VRDriver::RunFrame()
 {
-    //MessageBox(NULL,"hi", "Example Driver", MB_OK);
     // Collect events
     vr::VREvent_t event;
     std::vector<vr::VREvent_t> events;
@@ -325,7 +256,6 @@ void ExampleDriver::VRDriver::RunFrame()
     this->last_frame_time_ = now;
 
     this->frame_timing_avg_ = this->frame_timing_avg_ * 0.9 + ((double)this->frame_timing_.count()) * 0.1;
-    //MessageBox(NULL, std::to_string(((double)this->frame_timing_.count()) * 0.1).c_str(), "Example Driver", MB_OK);
 
     for (auto& device : this->trackers_)
         device->Update();

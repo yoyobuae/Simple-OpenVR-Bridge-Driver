@@ -103,10 +103,6 @@ void ExampleDriver::ControllerDevice::Update()
     pose.poseTimeOffset = this->wantedTimeOffset;
 
 
-    //pose.vecVelocity[0] = (pose.vecPosition[0] - previous_position[0]) / pose_time_delta_seconds;
-    //pose.vecVelocity[1] = (pose.vecPosition[1] - previous_position[1]) / pose_time_delta_seconds;
-    //pose.vecVelocity[2] = (pose.vecPosition[2] - previous_position[2]) / pose_time_delta_seconds;
-
     // Recalibrate controller orientation on button press
     if (this->handedness_ == Handedness::LEFT) {
         if (getJoyButton(BTN_TRIGGER_HAPPY2)) {

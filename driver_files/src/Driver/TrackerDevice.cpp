@@ -43,8 +43,6 @@ void ExampleDriver::TrackerDevice::reinit(int msaved, double mtime, double msmoo
     prev_positions = temp;
     max_time = mtime;
     smoothing = msmooth;
-
-    //Log("Settings changed! " + std::to_string(msaved) + " " + std::to_string(mtime));
 }
 
 void ExampleDriver::TrackerDevice::Update()
@@ -55,14 +53,11 @@ void ExampleDriver::TrackerDevice::Update()
     // Check if this device was asked to be identified
     auto events = GetDriver()->GetOpenVREvents();
     for (auto event : events) {
-        // Note here, event.trackedDeviceIndex does not necissarily equal this->device_index_, not sure why, but the component handle will match so we can just use that instead
-        //if (event.trackedDeviceIndex == this->device_index_) {
         if (event.eventType == vr::EVREventType::VREvent_Input_HapticVibration) {
             if (event.data.hapticVibration.componentHandle == this->haptic_component_) {
                 this->did_vibrate_ = true;
             }
         }
-        //}
     }
 
     // Check if we need to keep vibrating
@@ -117,22 +112,8 @@ void ExampleDriver::TrackerDevice::Update()
     pose.qRotation.y /= mag;
     pose.qRotation.z /= mag;
 
-    /*
-    if (pose_time_delta_seconds > 0)            //unless we get two pose updates at the same time, update velocity so steamvr can do some interpolation
-    {
-        pose.vecVelocity[0] = 0.8 * pose.vecVelocity[0] + 0.2 * (pose.vecPosition[0] - previous_position[0]) / pose_time_delta_seconds;
-        pose.vecVelocity[1] = 0.8 * pose.vecVelocity[1] + 0.2 * (pose.vecPosition[1] - previous_position[1]) / pose_time_delta_seconds;
-        pose.vecVelocity[2] = 0.8 * pose.vecVelocity[2] + 0.2 * (pose.vecPosition[2] - previous_position[2]) / pose_time_delta_seconds;
-    }
-    pose.poseTimeOffset = this->wantedTimeOffset;
-    
-    */
 
     pose.poseTimeOffset = 0;
-
-    //pose.vecVelocity[0] = (pose.vecPosition[0] - previous_position[0]) / pose_time_delta_seconds;
-    //pose.vecVelocity[1] = (pose.vecPosition[1] - previous_position[1]) / pose_time_delta_seconds;
-    //pose.vecVelocity[2] = (pose.vecPosition[2] - previous_position[2]) / pose_time_delta_seconds;
 
     // Post pose
     GetDriver()->GetDriverHost()->TrackedDevicePoseUpdated(this->device_index_, pose, sizeof(vr::DriverPose_t));
@@ -163,7 +144,6 @@ int ExampleDriver::TrackerDevice::get_next_pose(double time_offset, double pred[
     }
 
     int curr_saved = 0;
-    //double pred[7] = {0};
 
     double avg_time = 0;
     double avg_time2 = 0;
@@ -176,20 +156,13 @@ int ExampleDriver::TrackerDevice::get_next_pose(double time_offset, double pred[
         avg_time2 += (prev_positions[i][0] * prev_positions[i][0]);
     }
 
-    //Log("saved values: " + std::to_string(curr_saved));
-
-    //printf("curr saved %d\n", curr_saved);
     if (curr_saved < 4)
     {
-        //printf("Too few values");
         statuscode = -1;
         return statuscode;
-        //return 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
     }
     avg_time /= curr_saved;
     avg_time2 /= curr_saved;
-
-    //printf("avg time %f\n", avg_time);
 
     double st = 0;
     for (int j = 0; j < curr_saved; j++)
@@ -214,8 +187,6 @@ int ExampleDriver::TrackerDevice::get_next_pose(double time_offset, double pred[
         avg_tval /= curr_saved;
         avg_val2 /= curr_saved;
 
-        //printf("--avg: %f\n", avg_val);
-
         double sv = 0;
         for (int j = 0; j < curr_saved; j++)
         {
@@ -223,27 +194,17 @@ int ExampleDriver::TrackerDevice::get_next_pose(double time_offset, double pred[
         }
         sv = sqrt(sv * (1.0 / curr_saved));
 
-        //printf("----sv: %f\n", sv);
-
         double rxy = (avg_tval - (avg_val * avg_time)) / sqrt((avg_time2 - (avg_time * avg_time)) * (avg_val2 - (avg_val * avg_val)));
         double b = rxy * (sv / st);
         double a = avg_val - (b * avg_time);
 
-        //printf("a: %f, b: %f\n", a, b);
-
         double y = a + b * new_time;
-        //Log("aha: " + std::to_string(y) + std::to_string(avg_val));
         if (abs(avg_val2 - (avg_val * avg_val)) < 0.00000001)               //bloody floating point rounding errors
             y = avg_val;
 
         pred[i - 1] = y;
-        //printf("<<<< %f --> %f\n",y, pred[i-1]);
-
-
     }
-    //printf("::: %f\n", pred[0]);
     return statuscode;
-    //return pred[0], pred[1], pred[2], pred[3], pred[4], pred[5], pred[6];
 }
 
 void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double c, double w, double x, double y, double z, double time_offset)
@@ -265,10 +226,6 @@ void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double 
     std::chrono::milliseconds time_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
     double time_since_epoch_seconds = time_since_epoch.count() / 1000.0;
 
-    //Log("time since epoch: " + std::to_string(time_since_epoch_seconds));
-    
-    //lock_t curr_time = clock();
-    //clock_t capture_time = curr_time - (timeOffset*1000);
     double curr_time = time_since_epoch_seconds;
     double time_since_update = curr_time - this->last_update;
     this->last_update = curr_time;
@@ -282,11 +239,6 @@ void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double 
     }
 
     double time = time_offset;
-    // double offset = (rand() % 100) / 10000.;
-    // time += offset;
-    // printf("%f %f\n", time, offset);
-
-    //Log("Time: " + std::to_string(time));
 
     double dist = sqrt(pow(next_pose[0] - a, 2) + pow(next_pose[1] - b, 2) + pow(next_pose[2] - c, 2));
     if (pose_valid == 0 && dist > 0.5)
@@ -335,62 +287,8 @@ void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double 
     prev_positions[i][5] = x;
     prev_positions[i][6] = y;
     prev_positions[i][7] = z;
-    /*                                                 //for debugging
-    Log("------------------------------------------------");
-    for (int i = 0; i < max_saved; i++)
-    {
-        Log("Time: " + std::to_string(prev_positions[i][0]));
-        Log("Position x: " + std::to_string(prev_positions[i][1]));
-    }
-    */
     return;
 }
-
-/*
-void ExampleDriver::TrackerDevice::UpdatePos(double a, double b, double c, double time, double smoothing)
-{
-    this->wantedPose[0] = (1 - smoothing) * this->wantedPose[0] + smoothing * a;
-    this->wantedPose[1] = (1 - smoothing) * this->wantedPose[1] + smoothing * b;
-    this->wantedPose[2] = (1 - smoothing) * this->wantedPose[2] + smoothing * c;
-
-    this->wantedTimeOffset = time;
-
-}
-
-void ExampleDriver::TrackerDevice::UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing)
-{
-    //lerp
-    double dot = qx * this->wantedPose[4] + qy * this->wantedPose[5] + qz * this->wantedPose[6] + qw * this->wantedPose[3];
-
-    if (dot < 0)
-    {
-        this->wantedPose[3] = smoothing * qw - (1 - smoothing) * this->wantedPose[3];
-        this->wantedPose[4] = smoothing * qx - (1 - smoothing) * this->wantedPose[4];
-        this->wantedPose[5] = smoothing * qy - (1 - smoothing) * this->wantedPose[5];
-        this->wantedPose[6] = smoothing * qz - (1 - smoothing) * this->wantedPose[6];
-    }
-    else
-    {
-        this->wantedPose[3] = smoothing * qw + (1 - smoothing) * this->wantedPose[3];
-        this->wantedPose[4] = smoothing * qx + (1 - smoothing) * this->wantedPose[4];
-        this->wantedPose[5] = smoothing * qy + (1 - smoothing) * this->wantedPose[5];
-        this->wantedPose[6] = smoothing * qz + (1 - smoothing) * this->wantedPose[6];
-    }
-    //normalize
-    double mag = sqrt(this->wantedPose[3] * this->wantedPose[3] +
-        this->wantedPose[4] * this->wantedPose[4] +
-        this->wantedPose[5] * this->wantedPose[5] +
-        this->wantedPose[6] * this->wantedPose[6]);
-
-    this->wantedPose[3] /= mag;
-    this->wantedPose[4] /= mag;
-    this->wantedPose[5] /= mag;
-    this->wantedPose[6] /= mag;
-
-    this->wantedTimeOffset = time;
-
-}
-*/
 
 DeviceType ExampleDriver::TrackerDevice::GetDeviceType()
 {
@@ -427,9 +325,6 @@ vr::EVRInitError ExampleDriver::TrackerDevice::Activate(uint32_t unObjectId)
     // Set up a render model path
     GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_RenderModelName_String, "{htc}/rendermodels/vr_tracker_vive_1_0");
 
-    // Set controller profile
-    //GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_InputProfilePath_String, "{apriltagtrackers}/input/example_tracker_bindings.json");
-
     // Set the icon
     GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceReady_String, "{apriltagtrackers}/icons/tracker_ready.png");
 
@@ -440,19 +335,6 @@ vr::EVRInitError ExampleDriver::TrackerDevice::Activate(uint32_t unObjectId)
     GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceNotReady_String, "{apriltagtrackers}/icons/tracker_not_ready.png");
     GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceStandby_String, "{apriltagtrackers}/icons/tracker_not_ready.png");
     GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceAlertLow_String, "{apriltagtrackers}/icons/tracker_not_ready.png");
-    /*
-    char id = this->serial_.at(12);
-    std::string role = "";
-    switch (id)
-    {
-    case '0':
-        role = "vive_tracker_waist"; break;
-    case '0':
-        role = "vive_tracker_left_foot"; break;
-    case '1':
-        role = "vive_tracker_right_foot"; break;
-    }
-    */
 
     //set role, role hint and everything else to ensure trackers are detected as trackers and not controllers
 

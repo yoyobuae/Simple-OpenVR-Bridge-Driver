@@ -4,8 +4,6 @@ ExampleDriver::TrackingReferenceDevice::TrackingReferenceDevice(std::string seri
     serial_(serial)
 {
 
-    // Get some random angle to place this tracking reference at in the scene
-    //this->random_angle_rad_ = fmod(rand() / 10000.f, 2 * 3.14159f);
 }
 
 std::string ExampleDriver::TrackingReferenceDevice::GetSerial()
