@@ -130,50 +130,6 @@ void ExampleDriver::HMDDevice::Update()
     this->last_pose_ = pose;
 }
 
-void ExampleDriver::HMDDevice::UpdatePos(double a, double b, double c, double time, double smoothing)
-{
-    this->wantedPose[0] = (1 - smoothing) * this->wantedPose[0] + smoothing * a;
-    this->wantedPose[1] = (1 - smoothing) * this->wantedPose[1] + smoothing * b;
-    this->wantedPose[2] = (1 - smoothing) * this->wantedPose[2] + smoothing * c;
-
-    this->wantedTimeOffset = time;
-
-}
-
-void ExampleDriver::HMDDevice::UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing)
-{
-    //lerp
-    double dot = qx * this->wantedPose[4] + qy * this->wantedPose[5] + qz * this->wantedPose[6] + qw * this->wantedPose[3];
-
-    if (dot < 0)
-    {
-        this->wantedPose[3] = smoothing * qw - (1 - smoothing) * this->wantedPose[3];
-        this->wantedPose[4] = smoothing * qx - (1 - smoothing) * this->wantedPose[4];
-        this->wantedPose[5] = smoothing * qy - (1 - smoothing) * this->wantedPose[5];
-        this->wantedPose[6] = smoothing * qz - (1 - smoothing) * this->wantedPose[6];
-    }
-    else
-    {
-        this->wantedPose[3] = smoothing * qw + (1 - smoothing) * this->wantedPose[3];
-        this->wantedPose[4] = smoothing * qx + (1 - smoothing) * this->wantedPose[4];
-        this->wantedPose[5] = smoothing * qy + (1 - smoothing) * this->wantedPose[5];
-        this->wantedPose[6] = smoothing * qz + (1 - smoothing) * this->wantedPose[6];
-    }
-    //normalize
-    double mag = sqrt(this->wantedPose[3] * this->wantedPose[3] +
-        this->wantedPose[4] * this->wantedPose[4] +
-        this->wantedPose[5] * this->wantedPose[5] +
-        this->wantedPose[6] * this->wantedPose[6]);
-
-    this->wantedPose[3] /= mag;
-    this->wantedPose[4] /= mag;
-    this->wantedPose[5] /= mag;
-    this->wantedPose[6] /= mag;
-
-    this->wantedTimeOffset = time;
-
-}
-
 DeviceType ExampleDriver::HMDDevice::GetDeviceType()
 {
     return DeviceType::HMD;
