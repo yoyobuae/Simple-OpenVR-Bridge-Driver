@@ -586,6 +586,23 @@ vr::EVRInitError ExampleDriver::ControllerDevice::Activate(uint32_t unObjectId)
         GetDriver()->GetInput()->CreateSkeletonComponent(props, "/input/skeleton/right", "/skeleton/hand/right", "/user/hand/right/pose/tip", vr::VRSkeletalTracking_Estimated, nullptr, 0, &skeleton_component_);
     }
 
+    if (this->handedness_ == Handedness::LEFT) {
+        this->last_pose_.qDriverFromHeadRotation =
+            HmdQuaternion_Product(HmdQuaternion_Init_Angle( 90, 0, 0, 1 ),
+                                  HmdQuaternion_Init_Angle( -55, 1, 0, 0 ));
+        this->last_pose_.vecDriverFromHeadTranslation[0] = 0.09;
+        this->last_pose_.vecDriverFromHeadTranslation[1] = -0.13;
+        this->last_pose_.vecDriverFromHeadTranslation[2] = -0.014;
+    }
+    else if (this->handedness_ == Handedness::RIGHT) {
+        this->last_pose_.qDriverFromHeadRotation =
+            HmdQuaternion_Product(HmdQuaternion_Init_Angle( -90, 0, 0, 1 ),
+                                  HmdQuaternion_Init_Angle( -55, 1, 0, 0 ));
+        this->last_pose_.vecDriverFromHeadTranslation[0] = -0.09;
+        this->last_pose_.vecDriverFromHeadTranslation[1] = -0.13;
+        this->last_pose_.vecDriverFromHeadTranslation[2] = -0.014;
+    }
+
     return vr::EVRInitError::VRInitError_None;
 }
 

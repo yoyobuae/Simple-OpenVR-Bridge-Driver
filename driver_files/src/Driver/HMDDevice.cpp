@@ -156,8 +156,11 @@ void ExampleDriver::HMDDevice::Update()
     // Compensate for difference in orientation between tracker and forward HMD direction
     // Should probably be made adjustable
     pose.qDriverFromHeadRotation =
-        HmdQuaternion_Product(HmdQuaternion_Init_Angle( -45, 0, 1, 0 ),
-                              HmdQuaternion_Init_Angle( 30, 1, 0, 0 ));
+        HmdQuaternion_Product(HmdQuaternion_Init_Angle( -42, 0, 1, 0 ),
+                              HmdQuaternion_Init_Angle( 18, 1, 0, 0 ));
+    pose.vecDriverFromHeadTranslation[0] = 0.007382;
+    pose.vecDriverFromHeadTranslation[1] = -0.065965;
+    pose.vecDriverFromHeadTranslation[2] = 0.057777;
 
     // Post pose
     GetDriver()->GetDriverHost()->TrackedDevicePoseUpdated(this->device_index_, pose, sizeof(vr::DriverPose_t));
