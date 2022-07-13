@@ -4,8 +4,6 @@ cmake_minimum_required(VERSION "3.15")
 project("BridgeDriver" CXX)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-include("${SUPERPROJECT_SOURCE_DIR}/CMake/shared.cmake")
-
 # Deps
 set(OPENVR_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/deps/openvr/headers")
 
@@ -52,10 +50,6 @@ att_read_version_file(DRIVER_VERSION "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt")
 target_compile_definitions("${LIB_NAME}" PUBLIC ATT_DRIVER_VERSION=${DRIVER_VERSION})
 
 target_link_libraries("${LIB_NAME}" PUBLIC common::semver)
-
-if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/install" CACHE PATH "Install destination." FORCE)
-endif()
 
 set(DRIVER_INSTALL_DIR "driver_files")
 
