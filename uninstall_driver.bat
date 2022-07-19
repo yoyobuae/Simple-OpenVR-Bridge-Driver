@@ -65,6 +65,11 @@ IF NOT "%errorlevel%"=="0" GOTO end
 REM display the current configuration, with the newly added driver
 CALL "%VRPATHREG_EXE%" show
 
+echo(
+echo The driver has been uninstalled successfully^^!
+echo(
+
+
 :end
 ENDLOCAL
 PAUSE

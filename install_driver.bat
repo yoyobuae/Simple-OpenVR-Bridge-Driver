@@ -48,11 +48,17 @@ IF NOT "%2"=="" (
 )
 
 IF NOT EXIST "%DRIVER_PATH%" (
-    ECHO Driver install not found: "%DRIVER_PATH%"
+    ECHO Driver not found: "%DRIVER_PATH%"
+    echo(
+    echo Check that you downloaded the right files and make sure to unzip the folder before running this script^^!
+    echo(
     GOTO end
 )
 IF NOT EXIST "%VRPATHREG_EXE%" (
     ECHO vrpathreg.exe not found: "%VRPATHREG_EXE%"
+    echo(
+    echo This usualy means an error with your SteamVR installation.
+    echo(
     GOTO end
 )
 
@@ -77,6 +83,10 @@ IF NOT "%errorlevel%"=="0" GOTO end
 
 REM display the current configuration, with the newly added driver
 CALL "%VRPATHREG_EXE%" show
+
+echo(
+echo The driver has been installed successfully^^!
+echo(
 
 :end
 ENDLOCAL

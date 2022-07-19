@@ -36,4 +36,6 @@ $vrpathreg_exe removedriverswithname $driver_name
 #shows currently installed drivers
 $vrpathreg_exe show
 
-
+echo
+echo The driver has been uninstalled successfully!
+echo 
