@@ -47,4 +47,6 @@ echo
 echo The driver has been installed successfully!
 echo 
 
+echo Could not activate multiple drivers in steamvr config! If trackers do not appear in SteamVR, you may need to edit steamvr.vrsettings manualy.
+echo 
 
