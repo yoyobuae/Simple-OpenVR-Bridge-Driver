@@ -13,10 +13,6 @@ vrpath=$(echo $vrpath | sed 's|[]"[]||g' | sed 's|^[[:space:]]*||' | sed 's|[[:s
 vrpathreg_exe="$vrpath"/bin/vrpathreg.sh
 
 #check if all the needed paths exist
-if ! test -d "$driver_path"; then
-    echo "Driver install not found: $driver_path"
-    exit
-fi
 
 if ! test -f "$vrpathreg_exe"; then
     echo "vrpathreg.exe not found: $vrpathreg_exe"
@@ -36,4 +32,6 @@ $vrpathreg_exe removedriverswithname $driver_name
 #shows currently installed drivers
 $vrpathreg_exe show
 
-
+echo
+echo The driver has been uninstalled successfully!
+echo 
