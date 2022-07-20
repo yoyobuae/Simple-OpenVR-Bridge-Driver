@@ -14,7 +14,7 @@ vrpathreg_exe="$vrpath"/bin/vrpathreg.sh
 
 #check if all the needed paths exist
 if ! test -d "$driver_path"; then
-    echo "Driver install not found: $driver_path"
+    echo "Driver not found: $driver_path"
 	echo
 	echo Check that you downloaded the right files and make sure to unzip the folder before running this script!
 	echo
@@ -36,9 +36,9 @@ if test -d "$vrpath"/drivers/apriltagtrackers; then
 fi
 
 #cleanup previous drivers, then installs the driver
-$vrpathreg_exe removedriver $driver_path
+$vrpathreg_exe removedriver "$driver_path"
 $vrpathreg_exe removedriverswithname $driver_name
-$vrpathreg_exe adddriver $driver_path
+$vrpathreg_exe adddriver "$driver_path"
 
 #shows currently installed drivers
 $vrpathreg_exe show
