@@ -469,10 +469,10 @@ vr::EVRInitError ExampleDriver::TrackerDevice::Activate(uint32_t unObjectId)
     //GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_InputProfilePath_String, "{apriltagtrackers}/input/example_tracker_bindings.json");
 
     // Set the icon
-    GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceReady_String, "{apriltagtrackers}/icons/tracker_ready.png");
 
     if (this->serial_.find("Apriltag") == std::string::npos)
     {
+        GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceReady_String, "{apriltagtrackers}/icons/tracker_ready.png");
         GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceOff_String, "{apriltagtrackers}/icons/tracker_not_ready.png");
         GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceSearching_String, "{apriltagtrackers}/icons/tracker_not_ready.png");
         GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceSearchingAlert_String, "{apriltagtrackers}/icons/tracker_not_ready.png");
@@ -483,6 +483,7 @@ vr::EVRInitError ExampleDriver::TrackerDevice::Activate(uint32_t unObjectId)
     }
     else
     {
+        GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceReady_String, "{apriltagtrackers}/icons/apriltag_ready.png");
         GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceOff_String, "{apriltagtrackers}/icons/apriltag_not_ready.png");
         GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceSearching_String, "{apriltagtrackers}/icons/apriltag_not_ready.png");
         GetDriver()->GetProperties()->SetStringProperty(props, vr::Prop_NamedIconPathDeviceSearchingAlert_String, "{apriltagtrackers}/icons/apriltag_not_ready.png");
