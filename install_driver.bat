@@ -33,7 +33,7 @@ set VRPATH=%VRPATH:"=%
 set VRPATHREG_EXE=!VRPATH!\\bin\\win64\\vrpathreg.exe
 
 IF "%1"=="help" (
-    ECHO Usage: install_driver.bat ^[^<driver path^>^] ^[^<path to vrpathreg.exe^>^]
+    ECHO Usage: install_driver.bat ^[^<driver path^>^] ^[^<path to vrpathreg.exe^>^ ^[^<path to steamvr.vrsettings^>^]
     ECHO ^<driver path^> defaults to "%DRIVER_PATH%"
     ECHO ^<path to vrpathreg.exe^> defaults to "%VRPATHREG_EXE%"
     GOTO end
@@ -54,12 +54,15 @@ IF NOT EXIST "%DRIVER_PATH%" (
     echo(
     GOTO end
 )
+
 IF NOT EXIST "%VRPATHREG_EXE%" (
     ECHO vrpathreg.exe not found: "%VRPATHREG_EXE%"
     echo(
-    echo This usualy means an error with your SteamVR installation.
+    echo This usualy means an error with your SteamVR installation, or if you have multiple installations of SteamVR.
+    echo You can also try to locate the vrpathreg.exe file yourself and input it below. The file is inside SteamVR\bin\win64.
     echo(
-    GOTO end
+    
+    set /p "VRPATHREG_EXE=Enter full path to vrpathreg.exe: "
 )
 
 REM remove driver from older versions
@@ -117,6 +120,22 @@ set VRCONFIG=%VRCONFIG:"=%
 
 set VRSETTINGS=!VRCONFIG!\\steamvr.vrsettings
 
+IF NOT "%3"=="" (
+    SET "VRSETTINGS=%3"
+)
+
+IF NOT EXIST "%VRSETTINGS%" (
+    ECHO steamvr.vrsettings not found: "%VRSETTINGS%"
+    echo(
+    echo This usualy means an error with your SteamVR installation, or if you have multiple installations of SteamVR.
+    echo You can also try to locate the steamvr.vrsettings file yourself and input it below. The file is inside Steam/config.
+    echo(
+    
+    set /p "VRSETTINGS=Enter full path to steamvr.vrsettings:"
+)
+
+REM we search for the steamvr section, and add the line to it
+
     set search="steamvr" : {
     set replace="steamvr" : { "activateMultipleDrivers" : true,
 
@@ -128,6 +147,8 @@ set VRSETTINGS=!VRCONFIG!\\steamvr.vrsettings
         >>"%textFile%" echo(!line:%search%=%replace%!
         endlocal
     )
+
+REM if activateMultipleDrivers is already set to false, set it to true. SteamVR will fix up the config and remove duplicates
 
     set search="activateMultipleDrivers" : false,
     set replace="activateMultipleDrivers" : true,

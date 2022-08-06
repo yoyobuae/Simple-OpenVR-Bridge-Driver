@@ -46,7 +46,12 @@ REM remove driver from older versions
 
 IF NOT EXIST "%VRPATHREG_EXE%" (
     ECHO vrpathreg.exe not found: "%VRPATHREG_EXE%"
-    GOTO end
+    echo(
+    echo This usualy means an error with your SteamVR installation, or if you have multiple installations of SteamVR.
+    echo You can also try to locate the vrpathreg.exe file yourself and input it below. The file is inside SteamVR\bin\win64.
+    echo(
+    
+    set /p "VRPATHREG_EXE=Enter full path to vrpathreg.exe: "
 )
 
 IF EXIST "!VRPATH!\\drivers\\apriltagtrackers" (
