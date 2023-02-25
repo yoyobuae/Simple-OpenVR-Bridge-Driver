@@ -156,9 +156,9 @@ int ExampleDriver::TrackerDevice::get_next_pose(double time_offset, double pred[
 
     double new_time = last_update - req_time;
 
-    if (new_time < -0.2)      //limit prediction to max 0.2 second into the future to prevent your feet from being yeeted into oblivion
+    if (new_time < -0.1)      //limit prediction to max 0.2 second into the future to prevent your feet from being yeeted into oblivion
     {
-        new_time = -0.2;
+        new_time = -0.1;
         statuscode = 1;
     }
 
