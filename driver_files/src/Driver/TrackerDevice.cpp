@@ -366,6 +366,14 @@ void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double 
         return;
     }
 
+#if 0 
+    if (a < -1.5 || a > 1.5 || b < -0.5 || b > 2.5 || c < -1.5 || c > 1.5)
+    {
+        Log("Dropped a pose! Was outside of playspace: " + std::to_string(a) + " " + std::to_string(b) + " " + std::to_string(c));
+        return;
+    }
+#endif
+
     if (time > max_time)
         return;
 
