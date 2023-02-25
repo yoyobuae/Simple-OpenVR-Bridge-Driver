@@ -299,6 +299,12 @@ int ExampleDriver::TrackerDevice::get_next_pose(double time_offset, double pred[
     }
 #endif
     //printf("::: %f\n", pred[0]);
+    //    //for debugging
+    //    Log(">  "
+    //        + std::to_string(new_time) + " "
+    //        + std::to_string(pred[0]) + " "
+    //        + std::to_string(pred[1]) + " "
+    //        + std::to_string(pred[2]));
     return statuscode;
     //return pred[0], pred[1], pred[2], pred[3], pred[4], pred[5], pred[6];
 }
@@ -392,14 +398,19 @@ void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double 
     prev_positions[i][5] = x;
     prev_positions[i][6] = y;
     prev_positions[i][7] = z;
-    /*                                                 //for debugging
-    Log("------------------------------------------------");
-    for (int i = 0; i < max_saved; i++)
-    {
-        Log("Time: " + std::to_string(prev_positions[i][0]));
-        Log("Position x: " + std::to_string(prev_positions[i][1]));
-    }
-    */
+    //    //for debugging
+    //    Log("<------------------------------------------------");
+    //    for (int j = 0; j < max_saved; j++)
+    //    {
+    //        //Log("Time: " + std::to_string(prev_positions[j][0]));
+    //        //Log("Position x: " + std::to_string(prev_positions[j][1]));
+    //        if (prev_positions[j][0] >= 0)
+    //            Log((j == i ? "<* " : "<  ")
+    //                + std::to_string(prev_positions[j][0]) + " "
+    //                + std::to_string(prev_positions[j][1]) + " "
+    //                + std::to_string(prev_positions[j][2]) + " "
+    //                + std::to_string(prev_positions[j][3]));
+    //    }
     return;
 }
 

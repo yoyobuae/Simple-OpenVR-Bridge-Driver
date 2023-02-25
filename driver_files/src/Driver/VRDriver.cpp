@@ -233,6 +233,9 @@ void ExampleDriver::VRDriver::PipeThread()
                     iss >> idx;
                     iss >> time_offset;
 
+                    //                    if (idx == 0)
+                    //                        Log(">----------------");
+
                     if (idx < this->devices_.size())
                     {
                         s = s + " trackerpose " + std::to_string(idx);
