@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "TrackerDevice.hpp"
+#include "1efilter.hpp"
 
 void normalizeQuat(double pose[])
 {
@@ -196,6 +197,39 @@ int ExampleDriver::TrackerDevice::get_next_pose(double time_offset, double pred[
     //printf("avg time %f\n", avg_time);
 
 #if 1
+    /* Implementing 1 euro filter:
+     * https://gery.casiez.net/1euro/
+     */
+    for (int i = 1; i < 8; i++)
+    {
+        static const double frequency = 30;
+        static const double mincutoff = 4;
+        static const double beta = 0.5;
+        static const double dcutoff = 1;
+
+        one_euro_filter<> filter(frequency, mincutoff, beta, dcutoff);
+        one_euro_filter<> filter1(frequency, mincutoff, beta, dcutoff);
+        double filtered = 0.0;
+        double last_filtered = 0.0;
+        double speed = 0.0;
+        double delta_t = 0.0;
+        double last_t = 0.0;
+
+        for (int ii = curr_saved - 1; ii >= 0; ii--)
+        {
+            last_filtered = filtered;
+            filtered = filter(prev_positions[ii][i], -prev_positions[ii][0]);
+            delta_t = (prev_positions[ii][0] - last_t);
+            if (delta_t > 0.0001)
+                speed = filter((filtered - last_filtered) / delta_t, -prev_positions[ii][0]);
+            else
+                speed = 0.0;
+            last_t = prev_positions[ii][0];
+        }
+
+        pred[i - 1] = filtered + speed * last_t;
+    }
+#elif 0
     /* Implementing Simple Linear regression without intercept term as in here:
      * https://en.wikipedia.org/wiki/Simple_linear_regression#Simple_linear_regression_without_the_intercept_term_(single_regressor)
      *
