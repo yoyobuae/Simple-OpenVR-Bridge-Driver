@@ -4,7 +4,7 @@
 
 // Workaround for bug in GCC: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79700
 #define GCC_COMPILER (defined(__GNUC__) && !defined(__clang__))
-#if GCC_COMPILER
+#if 1
 extern "C++"
 {
 namespace std
