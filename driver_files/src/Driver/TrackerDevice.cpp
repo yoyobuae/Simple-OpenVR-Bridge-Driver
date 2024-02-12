@@ -445,7 +445,8 @@ void ExampleDriver::TrackerDevice::SavePrevPositions()
             ss << prev_positions[i][4] << "\t";
             ss << prev_positions[i][5] << "\t";
             ss << prev_positions[i][6] << "\t";
-            ss << prev_positions[i][7] << "\n";
+            ss << prev_positions[i][7] << "\t";
+            ss << prev_positions[i][8] << "\n";
         }
     }
     ss <<  "\n";

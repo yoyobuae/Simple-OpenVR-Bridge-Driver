@@ -121,7 +121,7 @@ void ExampleDriver::VRDriver::PipeThread()
                     auto addstation = std::make_shared<TrackingReferenceDevice>("AprilCamera" + std::to_string(this->devices_.size()));
                     this->AddDevice(addstation);
                     this->stations_.push_back(addstation);
-                    s = s + " added";
+                    s = s + " added " + std::to_string(this->stations_.size());
                 }
                 else if (word == "updatestation")
                 {
