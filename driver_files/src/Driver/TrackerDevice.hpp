@@ -63,5 +63,6 @@ namespace ExampleDriver {
         double max_time = 1;
         double smoothing = 0;
 
+        void SavePrevPositions();
     };
 };

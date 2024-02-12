@@ -1,3 +1,7 @@
+#include <fcntl.h>
+#include <unistd.h>
+#include <sstream>
+
 #include "TrackerDevice.hpp"
 
 void normalizeQuat(double pose[])
@@ -419,7 +423,35 @@ void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double 
     //                + std::to_string(prev_positions[j][2]) + " "
     //                + std::to_string(prev_positions[j][3]));
     //    }
+    SavePrevPositions();
     return;
+}
+
+void ExampleDriver::TrackerDevice::SavePrevPositions()
+{
+    int fd = ::open("/tmp/prev_positions.csv", O_WRONLY | O_CREAT | O_APPEND);
+
+    std::stringstream ss;
+
+    for (int i = 0; i < max_saved; i++)
+    {
+        if (prev_positions[i][0] >= 0)
+        {
+            ss << prev_positions[i][0] << "\t";
+            ss << prev_positions[i][1] << "\t";
+            ss << prev_positions[i][2] << "\t";
+            ss << prev_positions[i][3] << "\t";
+            ss << prev_positions[i][4] << "\t";
+            ss << prev_positions[i][5] << "\t";
+            ss << prev_positions[i][6] << "\t";
+            ss << prev_positions[i][7] << "\n";
+        }
+    }
+    ss <<  "\n";
+
+    ::write(fd, ss.str().c_str(), ss.str().size());
+
+    ::close(fd);
 }
 
 /*
