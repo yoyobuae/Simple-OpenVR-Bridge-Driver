@@ -43,7 +43,7 @@ void ExampleDriver::TrackerDevice::reinit(int msaved, double mtime, double msmoo
         msmooth = 0.99;
 
     max_saved = msaved;
-    std::vector<std::vector<double>> temp(msaved, std::vector<double>(8,-1));
+    std::vector<std::vector<double>> temp(msaved, std::vector<double>(9,-1));
     prev_positions = temp;
     max_time = mtime;
     smoothing = msmooth;
@@ -313,7 +313,7 @@ int ExampleDriver::TrackerDevice::get_next_pose(double time_offset, double pred[
     //return pred[0], pred[1], pred[2], pred[3], pred[4], pred[5], pred[6];
 }
 
-void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double c, double w, double x, double y, double z, double time_offset)
+void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double c, double w, double x, double y, double z, double time_offset, int cam_idx)
 {
     double next_pose[7];
     int pose_valid = get_next_pose(time_offset, next_pose);
@@ -392,7 +392,7 @@ void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double 
     {
         if (prev_positions[j - 1][0] >= 0)
         {
-            for (int k = 0; k < 8; k++)
+            for (int k = 0; k < 9; k++)
             {
                 prev_positions[j][k] = prev_positions[j - 1][k];
             }
@@ -410,6 +410,7 @@ void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double 
     prev_positions[i][5] = x;
     prev_positions[i][6] = y;
     prev_positions[i][7] = z;
+    prev_positions[i][8] = cam_idx;
     //    //for debugging
     //    Log("<------------------------------------------------");
     //    for (int j = 0; j < max_saved; j++)

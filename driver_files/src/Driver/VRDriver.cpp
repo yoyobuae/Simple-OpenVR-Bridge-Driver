@@ -148,9 +148,9 @@ void ExampleDriver::VRDriver::PipeThread()
                 }
                 else if (word == "updatepose")
                 {
-                    int idx;
+                    int idx, cam_idx;
                     double a, b, c, qw, qx, qy, qz, time, smoothing;
-                    iss >> idx; iss >> a; iss >> b; iss >> c; iss >> qw; iss >> qx; iss >> qy; iss >> qz; iss >> time; iss >> smoothing;
+                    iss >> idx; iss >> a; iss >> b; iss >> c; iss >> qw; iss >> qx; iss >> qy; iss >> qz; iss >> time; iss >> smoothing; iss >> cam_idx;
 
                     if (idx < this->trackers_.size())
                     {
@@ -160,7 +160,7 @@ void ExampleDriver::VRDriver::PipeThread()
                         double pose[7];
                         int statuscode = this->trackers_[idx]->get_next_pose(time, pose);
 
-                        this->trackers_[idx]->save_current_pose(a, b, c, qw, qx, qy, qz, time);
+                        this->trackers_[idx]->save_current_pose(a, b, c, qw, qx, qy, qz, time, cam_idx);
                         //this->trackers_[idx]->UpdatePos(a, b, c, time, 1-smoothing);
                         //this->trackers_[idx]->UpdateRot(qw, qx, qy, qz, time, 1-smoothing);
 

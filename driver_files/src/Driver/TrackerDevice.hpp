@@ -25,7 +25,7 @@ namespace ExampleDriver {
             virtual void Update() override;
             //virtual void UpdatePos(double a, double b, double c, double time, double smoothing);
             //virtual void UpdateRot(double qw, double qx, double qy, double qz, double time, double smoothing);
-            virtual void save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time);
+            virtual void save_current_pose(double a, double b, double c, double qw, double qx, double qy, double qz, double time, int cam_idx);
             virtual int get_next_pose(double req_time, double pred[]);
             virtual vr::TrackedDeviceIndex_t GetDeviceIndex() override;
             virtual DeviceType GetDeviceType() override;
