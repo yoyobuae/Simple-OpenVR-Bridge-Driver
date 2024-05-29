@@ -174,6 +174,8 @@ int ExampleDriver::TrackerDevice::get_next_pose(double time_offset, double pred[
     int curr_saved = 0;
     //double pred[7] = {0};
 
+    std::lock_guard<std::mutex> guard(prev_positions_mutex);
+
     double avg_time = 0;
     double avg_time2 = 0;
     for (int i = 0; i < max_saved; i++)
@@ -378,6 +380,7 @@ void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double 
     double time_since_update = curr_time - this->last_update;
     this->last_update = curr_time;
 
+    std::lock_guard<std::mutex> guard(prev_positions_mutex);
     for (int i = 0; i < max_saved; i++)
     {
         if (prev_positions[i][0] >= 0)
