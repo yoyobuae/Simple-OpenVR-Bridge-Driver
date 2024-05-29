@@ -1,4 +1,4 @@
-/build
+/build*
 /CMakeFiles
 /.vs
 *.vcxproj*
@@ -6,5 +6,5 @@
 CMakeCache.txt
 *.stamp*
 cmake_install.cmake
-*.swp
+*.sw*
 *~
