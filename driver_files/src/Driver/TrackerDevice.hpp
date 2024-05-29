@@ -12,6 +12,7 @@
 #include <sstream>
 #include <iostream>
 #include <string>
+#include <mutex>
 
 namespace ExampleDriver {
     class TrackerDevice : public IVRDevice {
@@ -59,6 +60,7 @@ namespace ExampleDriver {
 
         int max_saved = 10;
         std::vector<std::vector<double>> prev_positions; // prev_positions[:][0] je time since now (koliko cajta nazaj se je naredl, torej min-->max)
+        std::mutex prev_positions_mutex;
         double last_update = 0;
         double max_time = 1;
         double smoothing = 0;
