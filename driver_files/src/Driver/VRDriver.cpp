@@ -38,6 +38,17 @@ void ExampleDriver::VRDriver::Cleanup()
 {
 }
 
+void saveString(std::string filename, std::string str)
+{
+    std::replace( str.begin(), str.end(), '\0', '\n');
+
+    int fd = ::open(filename.c_str(), O_WRONLY | O_CREAT | O_APPEND);
+
+    ::write(fd, str.c_str(), str.size());
+
+    ::close(fd);
+}
+
 void ExampleDriver::VRDriver::PipeThread()
 {
     char buffer[1024];
@@ -56,6 +67,8 @@ void ExampleDriver::VRDriver::PipeThread()
             //MessageBoxA(NULL, buffer, "Example Driver", MB_OK);
 
             std::string rec = buffer;
+
+            //saveString("/tmp/apriltag_dump.txt", std::string("\n> ") + rec);
 
             //Log("Received message: " + rec);
 
@@ -303,6 +316,7 @@ void ExampleDriver::VRDriver::PipeThread()
 
             s = s + "  OK\0";
 
+            //saveString("/tmp/apriltag_dump.txt", std::string("\n< ") + s);
             // = length of string + terminating '\0' !!!
             ipcConnection.send(s.c_str(), (s.length() + 1));
         }
