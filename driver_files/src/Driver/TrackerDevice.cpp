@@ -465,7 +465,7 @@ void ExampleDriver::TrackerDevice::save_current_pose(double a, double b, double 
     //                + std::to_string(prev_positions[j][2]) + " "
     //                + std::to_string(prev_positions[j][3]));
     //    }
-    SavePrevPositions();
+    //SavePrevPositions();
     return;
 }
 
