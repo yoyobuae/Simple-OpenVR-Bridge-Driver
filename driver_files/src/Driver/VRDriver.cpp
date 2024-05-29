@@ -1,3 +1,13 @@
+#include <algorithm>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sstream>
+
+#include "apriltagrpc.capnp.hpp"
+#include <kj/debug.h>
+#include <capnp/ez-rpc.h>
+#include <capnp/message.h>
+
 #include "VRDriver.hpp"
 #include <Driver/HMDDevice.hpp>
 #include <Driver/TrackerDevice.hpp>
@@ -24,7 +34,10 @@ vr::EVRInitError ExampleDriver::VRDriver::Init(vr::IVRDriverContext* pDriverCont
 
     std::thread pipeThread(&ExampleDriver::VRDriver::PipeThread, this);
     pipeThread.detach();
-  
+
+    std::thread rpcThread(&ExampleDriver::VRDriver::RpcThread, this);
+    rpcThread.detach();
+
     // Add a couple tracking references
     //this->AddDevice(std::make_shared<TrackingReferenceDevice>("Example_TrackingReference_A"));
     //this->AddDevice(std::make_shared<TrackingReferenceDevice>("Example_TrackingReference_B"));
@@ -328,6 +341,92 @@ void ExampleDriver::VRDriver::PipeThread()
         }
         */
     }
+}
+
+typedef unsigned int uint;
+
+class ExampleDriver::VRDriver::AprilTagRpcImpl final: public AprilTagRpc::Server {
+    public:
+    AprilTagRpcImpl(VRDriver *driver) : driver(driver) {}
+    ::kj::Promise<void> getTrackerPose(GetTrackerPoseContext context) override {
+        auto params = context.getParams();
+        //        {
+        //            std::stringstream ss;
+        //            ss << "Got request: getTrackerPose"
+        //                << params.toString().flatten().cStr()
+        //                << std::endl;
+        //            vr::VRDriverLog()->Log(ss.str().c_str());
+        //        }
+
+        int idx = params.getIndex();
+        double values[7] = { 0.0 };
+        int statuscode = -1;
+
+        //        {
+        //            std::stringstream ss;
+        //            ss << "idx = "
+        //                << idx
+        //                << "driver->devices_.size() = "
+        //                << driver->devices_.size()
+        //                << std::endl;
+        //            vr::VRDriverLog()->Log(ss.str().c_str());
+        //        }
+
+        if (idx < driver->devices_.size())
+        {
+            statuscode = driver->trackers_[idx]->get_next_pose(params.getTimeOffset(), values);
+        }
+
+        //        {
+        //            std::stringstream ss;
+        //            ss << "statuscode = "
+        //                << statuscode
+        //                << std::endl;
+        //            vr::VRDriverLog()->Log(ss.str().c_str());
+        //        }
+        //        {
+        //            std::stringstream ss;
+        //            ss << "values = "
+        //                << values[0] << ", "
+        //                << values[1] << ", "
+        //                << values[2] << ", "
+        //                << values[3] << ", "
+        //                << values[4] << ", "
+        //                << values[5] << ", "
+        //                << values[6]
+        //                << std::endl;
+        //            vr::VRDriverLog()->Log(ss.str().c_str());
+        //        }
+
+        auto pose = context.getResults().getPose();
+        pose.setX(values[0]);
+        pose.setY(values[1]);
+        pose.setZ(values[2]);
+        pose.setQw(values[3]);
+        pose.setQx(values[4]);
+        pose.setQy(values[5]);
+        pose.setQz(values[6]);
+        //        {
+        //            std::stringstream ss;
+        //            ss << "Sending response: "
+        //                << pose.toString().flatten().cStr()
+        //                << std::endl;
+        //            vr::VRDriverLog()->Log(ss.str().c_str());
+        //        }
+
+        return kj::READY_NOW;
+    }
+
+    VRDriver *driver;
+};
+
+void ExampleDriver::VRDriver::RpcThread()
+{
+    capnp::EzRpcServer server(kj::heap<AprilTagRpcImpl>(this), "192.168.9.130:54321");
+    auto& waitScope = server.getWaitScope();
+    vr::VRDriverLog()->Log("Listening ...\n");
+    uint port = server.getPort().wait(waitScope);
+    kj::NEVER_DONE.wait(waitScope);
 }
 
 void ExampleDriver::VRDriver::RunFrame()

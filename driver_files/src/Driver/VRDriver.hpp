@@ -54,6 +54,7 @@ namespace ExampleDriver {
         vr::HmdQuaternion_t GetRotation(vr::HmdMatrix34_t matrix);
         vr::HmdVector3_t GetPosition(vr::HmdMatrix34_t matrix);
         void PipeThread();
+        void RpcThread();
 
         int pipeNum = 1;
         double smoothFactor = 0.2;
@@ -61,5 +62,7 @@ namespace ExampleDriver {
         int tracker_max_saved = 10;
         double tracker_max_time = 1;
         double tracker_smoothing = 0;
+
+        class AprilTagRpcImpl;
     };
 };

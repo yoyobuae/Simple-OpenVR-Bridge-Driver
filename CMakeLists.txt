@@ -23,6 +23,8 @@ elseif(APPLE)
 endif()
 
 find_library(OPENVR_LIB openvr_api HINTS "${CMAKE_CURRENT_SOURCE_DIR}/libraries/openvr/lib/${PLATFORM_NAME}${PROCESSOR_ARCH}/" NO_DEFAULT_PATH )
+find_package(CapnProto CONFIG REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 add_subdirectory("example")
 
@@ -40,6 +42,7 @@ target_include_directories("${EXAMPLE_PROJECT}" PUBLIC "${CMAKE_CURRENT_SOURCE_D
 target_include_directories("${EXAMPLE_PROJECT}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/libraries/linalg")
 target_include_directories("${EXAMPLE_PROJECT}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/driver_files/src/")
 target_link_libraries("${EXAMPLE_PROJECT}" PUBLIC "${OPENVR_LIB}")
+target_link_libraries("${EXAMPLE_PROJECT}" PRIVATE CapnProto::capnp-rpc)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/driver_files/src" PREFIX "Header Files" FILES ${HEADERS})
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/driver_files/src" PREFIX "Source Files" FILES ${SOURCES})
 set_property(TARGET "${EXAMPLE_PROJECT}" PROPERTY CXX_STANDARD 17)
