@@ -211,7 +211,7 @@ int ExampleDriver::TrackerDevice::get_next_pose(double time_offset, double pred[
         static const double frequency = 30;
         static const double mincutoff = 4;
         static const double beta = 0.5;
-        static const double dcutoff = 1;
+        static const double dcutoff = 4;
 
         one_euro_filter<> filter(frequency, mincutoff, beta, dcutoff);
         one_euro_filter<> filter1(frequency, mincutoff, beta, dcutoff);
@@ -225,15 +225,15 @@ int ExampleDriver::TrackerDevice::get_next_pose(double time_offset, double pred[
         {
             last_filtered = filtered;
             filtered = filter(prev_positions[ii][i], -prev_positions[ii][0]);
-            delta_t = (prev_positions[ii][0] - last_t);
+            delta_t = -(prev_positions[ii][0] - last_t);
             if (delta_t > 0.0001)
-                speed = filter((filtered - last_filtered) / delta_t, -prev_positions[ii][0]);
+                speed = filter1((filtered - last_filtered) / delta_t, -prev_positions[ii][0]);
             else
                 speed = 0.0;
             last_t = prev_positions[ii][0];
         }
 
-        pred[i - 1] = filtered + speed * last_t;
+        pred[i - 1] = filtered + speed * -new_time;
     }
 #elif 0
     /* Implementing Simple Linear regression without intercept term as in here:
